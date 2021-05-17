@@ -18,7 +18,7 @@ library(dplyr)
 library(stringr)
 library(vegan)
 
-setwd("~/Documents/GitHub/PBIN/data")
+setwd("~/Documents/GitHub/PBIN_ShapiroLab/data")
 
 #### UPLOAD DATA ####
 #upload viral ASV count table and metadata
@@ -138,22 +138,32 @@ vir_ps_pel <- subset_samples(virps3000, Site == "Pelagic")
 ###### RELATIVE ABUNDANCE ######
 
 ### Top 20 ###
-ps_lit_relab <- transform_sample_counts(vir_ps_lit, function(OTU) OTU/sum(OTU))
-
 # if (!requireNamespace("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
 # BiocManager::install("gmteunisse/Fantaxtic")
 library("fantaxtic")
-lit_relab_top20 <- get_top_taxa(ps_lit_relab, 20, relative = TRUE, discard_other = F,
-             other_label = "Other")
-taxa_abun_tab_lit <- psmelt(lit_relab_top20)
+getTop20 <- function(sampType){
+  ps_relab <- transform_sample_counts(sampType, function(OTU) OTU/sum(OTU))
+  
+  relab_top20 <- get_top_taxa(ps_relab, 20, relative = TRUE, discard_other = F,
+                              other_label = "Other")
+  taxa_abun_tab <- psmelt(relab_top20)
+  return(taxa_abun_tab)
+}
+
+taxa_abun_tab_lit <- getTop20(vir_ps_lit)
+taxa_abun_tab_pel <- getTop20(vir_ps_pel)
 
 #create date col
 library(lubridate)
-m <- month(taxa_abun_tab_lit$Date)
-day <- day(taxa_abun_tab_lit$Date)
-md <- paste(day, m, sep="-")
-
+getMonthDay <- function(table){
+  m <- month(table$Date)
+  day <- day(table$Date)
+  md <- paste(day, m, sep="-")
+  return(md)
+}
+md.l <- getMonthDay(taxa_abun_tab_lit)
+md.p <- getMonthDay(taxa_abun_tab_pel)
 
 #ensure colours are the same across both plots (need to run pelagic script below)
 dd <- union(taxa_abun_tab_lit$species, taxa_abun_tab_pel$species)
@@ -168,55 +178,29 @@ dd.col=sample(col_vector, length(dd))
 names(dd.col) <- dd
 dd.col[names(dd.col) == "Other"] <- "lightgrey"
 
+plotRelAb <- function(rel_ab_tab, monthDay, plotTitle){
+  rel_ab_plot <- rel_ab_tab %>% 
+    ggplot(aes(x =Sample, y = Abundance, fill = species, order = -species)) +
+    geom_bar(stat = "identity",position = position_stack(reverse = T)) + #position: Other should be top stack
+    scale_fill_manual("ASV", values = dd.col)+
+    labs(x = "",
+         y = "Relative Abundance",
+         title = plotTitle) +
+    facet_grid(~ Years, scales = "free") +
+    theme(
+      axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
+      axis.text.y = element_text(size = 12),
+      legend.text = element_text(size = 10),
+      strip.text = element_text(size = 12)
+    )+
+    scale_x_discrete(labels = monthDay, name="Sample date")+
+    guides(fill=guide_legend(reverse = T)) #match the legend order to the order of the stack bars
+return(rel_ab_plot)
+}
 
-rel_ab_plot_lit <- taxa_abun_tab_lit %>% 
-  ggplot(aes(x =Sample, y = Abundance, fill = species, order = -species)) +
-  geom_bar(stat = "identity",position = position_stack(reverse = T)) + #position: Other should be top stack
-  scale_fill_manual("ASV", values = dd.col)+
-  labs(x = "",
-       y = "Relative Abundance",
-       title = "Relative Abundance (littoral)") +
-  facet_grid(~ Years, scales = "free") +
-  theme(
-    axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
-    axis.text.y = element_text(size = 12),
-    legend.text = element_text(size = 10),
-    strip.text = element_text(size = 12)
-  )+
-  scale_x_discrete(labels = md, name="Sample date")+
-  guides(fill=guide_legend(reverse = T)) #match the legend order to the order of the stack bars 
-rel_ab_plot_lit
+(rel_ab_plot_lit <- plotRelAb(taxa_abun_tab_lit, md.l, "Relative Abundance (littoral)"))
+(rel_ab_plot_pel <- plotRelAb(taxa_abun_tab_pel, md.p,  "Relative Abundance (pelagic)"))
 
-
-
-### repeat for pelagic ###
-ps_pel_relab <- transform_sample_counts(vir_ps_pel, function(OTU) OTU/sum(OTU))
-
-pel_relab_top20 <- get_top_taxa(ps_pel_relab, 20, relative = TRUE, discard_other = F,
-                                other_label = "Other")
-taxa_abun_tab_pel <- psmelt(pel_relab_top20)
-
-m.p <- month(taxa_abun_tab_pel$Date)
-day.p <- day(taxa_abun_tab_pel$Date)
-md.p <- paste(day, m, sep="-")
-
-rel_ab_plot_pel <- taxa_abun_tab_pel %>% 
-  ggplot(aes(x =Sample, y = Abundance, fill = species)) +
-  geom_bar(stat = "identity", position = position_stack(reverse = T)) +
-  scale_fill_manual("ASV", values = dd.col)+
-  labs(x = "",
-       y = "Relative Abundance",
-       title = "Relative Abundance (pelagic)") +
-  facet_grid(~ Years, scales = "free") +
-  theme(
-    axis.text.x = element_text(size = 5, angle = 90, vjust = 0.5, hjust = 1),
-    axis.text.y = element_text(size = 12),
-    legend.text = element_text(size = 10),
-    strip.text = element_text(size = 12)
-  )+
-  scale_x_discrete(labels = md.p, name="Sample date")+
-  guides(fill=guide_legend(reverse = T))
-rel_ab_plot_pel
 
 
 
