@@ -130,8 +130,11 @@ summarize_phyloseq(virps3000)
 #sparsity is how populated is the data with zeros.
 
 # separate into pelagic and littoral phyloseq objects
-vir_ps_lit <- subset_samples(virps3000, Site == "Littoral")
-vir_ps_pel <- subset_samples(virps3000, Site == "Pelagic")
+vir_ps_lit <- subset_samples(viral_physeq, Site == "Littoral")
+vir_ps_pel <- subset_samples(viral_physeq, Site == "Pelagic")
+
+vir_ps_lit_filt <- subset_samples(virps3000, Site == "Littoral")
+vir_ps_pel_filt <- subset_samples(virps3000, Site == "Pelagic")
 
 
 
@@ -151,8 +154,8 @@ getTop20 <- function(sampType){
   return(taxa_abun_tab)
 }
 
-taxa_abun_tab_lit <- getTop20(vir_ps_lit)
-taxa_abun_tab_pel <- getTop20(vir_ps_pel)
+taxa_abun_tab_lit <- getTop20(vir_ps_lit_filt)
+taxa_abun_tab_pel <- getTop20(vir_ps_pel_filt)
 
 #create date col
 library(lubridate)
@@ -178,7 +181,7 @@ dd.col=sample(col_vector, length(dd))
 names(dd.col) <- dd
 dd.col[names(dd.col) == "Other"] <- "lightgrey"
 
-plotRelAb <- function(rel_ab_tab, monthDay, plotTitle){
+plotRelAb <- function(rel_ab_tab, md, plotTitle){
   rel_ab_plot <- rel_ab_tab %>% 
     ggplot(aes(x =Sample, y = Abundance, fill = species, order = -species)) +
     geom_bar(stat = "identity",position = position_stack(reverse = T)) + #position: Other should be top stack
@@ -193,13 +196,16 @@ plotRelAb <- function(rel_ab_tab, monthDay, plotTitle){
       legend.text = element_text(size = 10),
       strip.text = element_text(size = 12)
     )+
-    scale_x_discrete(labels = monthDay, name="Sample date")+
+    scale_x_discrete(labels = md, name="Sample date")+
     guides(fill=guide_legend(reverse = T)) #match the legend order to the order of the stack bars
 return(rel_ab_plot)
 }
 
-(rel_ab_plot_lit <- plotRelAb(taxa_abun_tab_lit, md.l, "Relative Abundance (littoral)"))
-(rel_ab_plot_pel <- plotRelAb(taxa_abun_tab_pel, md.p,  "Relative Abundance (pelagic)"))
+rel_ab_plot_lit <- plotRelAb(taxa_abun_tab_lit, md.l, "Relative Abundance (littoral)")
+rel_ab_plot_pel <- plotRelAb(taxa_abun_tab_pel, md.p, "Relative Abundance (pelagic)")
+
+library(ggpubr)
+ggpubr::ggarrange(rel_ab_plot_pel, rel_ab_plot_lit, ncol=2, nrow=1, common.legend = F, legend="bottom")
 
 
 
@@ -214,31 +220,39 @@ vir_ps_lit
 vir_ps_pel 
 
 #richness by year
-ba <- breakaway(virps3000)
-ba
-
-ymd <- vir_ps_pel %>% sample_data %>% get_variable("Date")
 library(lubridate)
-m <- month(ymd)
-d <- day(ymd)
-md <- paste( d, m, sep="-")
 
-ba_vir_df = data.frame("richness" = (ba %>% summary)$estimate,
-                        #"sample" = (ba %>% summary)$sample_names,
-                        "error" = (ba %>% summary)$error,
-                        "Years" = virps3000 %>% sample_data %>% get_variable("Years"),
-                        "Upper" = (ba %>% summary)$upper,
-                        "Lower" = (ba %>% summary)$lower,
-                       "sample"= virps3000 %>% sample_data %>% get_variable("description"))
-head(ba_vir_df)
-ggplot(ba_vir_df, aes(x = forcats::fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
-  geom_point(size=3)+
-  geom_errorbar(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper), width=0.05))+ 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8), #rotate axis labels
-        plot.title = element_text(hjust = 0.5))+ #center title
-  ggtitle("Breakaway richness of pelagic samples")+
-  scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
-  scale_y_continuous(name="Richness")
+plot.ba <- function(ps.obj, plot.title){
+  ba <- breakaway(ps.obj)
+  ymd <- ps.obj %>% sample_data %>% get_variable("Date")
+  m <- month(ymd)
+  d <- day(ymd)
+  md <- paste( d, m, sep="-")
+  
+  ba_vir_df = data.frame("richness" = (ba %>% summary)$estimate,
+                          #"sample" = (ba %>% summary)$sample_names,
+                          "error" = (ba %>% summary)$error,
+                          "Years" = ps.obj %>% sample_data %>% get_variable("Years"),
+                          "Upper" = (ba %>% summary)$upper,
+                          "Lower" = (ba %>% summary)$lower,
+                         "sample"= ps.obj %>% sample_data %>% get_variable("description"))
+  head(ba_vir_df)
+  baPlot <- ggplot(ba_vir_df, aes(x = forcats::fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
+    geom_point(size=3)+
+    geom_errorbar(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper), width=0.05))+ 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
+          plot.title = element_text(hjust = 0.5))+ #center title
+    ggtitle(plot.title)+
+    scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
+    scale_y_continuous(name="Richness")+
+    ylim(0, 650)
+  return(baPlot)
+}
+
+ba.pel <- plot.ba(vir_ps_pel, "Breakaway richness of pelagic samples")
+ba.lit <- plot.ba(vir_ps_lit, "Breakaway richness of littoral samples")
+
+ggpubr::ggarrange(ba.pel, ba.lit, ncol=2, nrow=1, common.legend = T, legend="bottom")
 
 
 #boxplot years
@@ -384,32 +398,40 @@ ggplot(data = data.frame("total_reads" =  phyloseq::sample_sums(virps3000),
 vir_ps_pel
 vir_ps_lit
 
-vir_shannon <- estimate_richness(virps3000, measures="Shannon")
-
-vir_shannon$sample <- rownames(vir_shannon)
-vir_shannon$Years <- sub("^([^_]*.[^_]*.[^_]*.[^_]*).*$",'\\1', rownames(vir_shannon)) #rm everything after 4th _
-vir_shannon$Years <- sub(".*[/_]", "", vir_shannon$Years) #remove everything before 3rd _
-# gsub("^.*\\_","", vir_shannon$Years) #another way to do same thing
-vir_shannon$date <- sub("^([^_]*.[^_]*.[^_]*.[^_]*).*$",'\\1', rownames(vir_shannon))
-vir_shannon$date <- gsub("^[^_]*_", "",vir_shannon$date) #remove sample name -- just keep date
-vir_shannon$date <- as.Date(vir_shannon$date, format="%d_%m_%Y")
-vir_shannon$bloom <- virps3000 %>% sample_data %>% get_variable("bloom2")
+plot.shannon <- function(ps.obj, plotTitle){
+  vir_shannon <- estimate_richness(ps.obj, measures="Shannon")
   
-head(vir_shannon)
+  vir_shannon$sample <- rownames(vir_shannon)
+  vir_shannon$Years <- sub("^([^_]*.[^_]*.[^_]*.[^_]*).*$",'\\1', rownames(vir_shannon)) #rm everything after 4th _
+  vir_shannon$Years <- sub(".*[/_]", "", vir_shannon$Years) #remove everything before 3rd _
+  # gsub("^.*\\_","", vir_shannon$Years) #another way to do same thing
+  vir_shannon$date <- sub("^([^_]*.[^_]*.[^_]*.[^_]*).*$",'\\1', rownames(vir_shannon))
+  vir_shannon$date <- gsub("^[^_]*_", "",vir_shannon$date) #remove sample name -- just keep date
+  vir_shannon$date <- as.Date(vir_shannon$date, format="%d_%m_%Y")
+  vir_shannon$bloom <- ps.obj %>% sample_data %>% get_variable("bloom2")
+    
+  head(vir_shannon)
+  
+  m <- month(vir_shannon$date)
+  d <- day(vir_shannon$date)
+  md <- paste(d, m, sep="-")
+  
+  plot.shan <- ggplot(vir_shannon, aes(x = forcats::fct_inorder(sample), y = Shannon, color = Years))+ #fct_inorder ensures plotting in order of sample date
+    geom_point(size=3)+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
+          plot.title = element_text(hjust = 0.5))+ #center title
+    ggtitle(plotTitle)+
+    scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
+    scale_y_continuous(name="Shannon diversity")+
+    ylim(1.5, 5)
+    #facet_grid(~ Years, scales = "free")
+  return(plot.shan)
+}
+shan.lit <- plot.shannon(vir_ps_lit, "Shannon diversity of littoral samples")
+shan.pel <- plot.shannon(vir_ps_pel, "Shannon diversity of pelagic samples")
 
-library(lubridate)
-m <- month(vir_shannon$date)
-d <- day(vir_shannon$date)
-md <- paste(d, m, sep="-")
+ggpubr::ggarrange(shan.lit, shan.pel, ncol=2, nrow=1, common.legend = T, legend="bottom")
 
-ggplot(vir_shannon, aes(x = forcats::fct_inorder(sample), y = Shannon, color = Years))+ #fct_inorder ensures plotting in order of sample date
-  geom_point(size=3)+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8), #rotate axis labels
-        plot.title = element_text(hjust = 0.5))+ #center title
-  ggtitle("Shannon diversity of littoral samples")+
-  scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
-  scale_y_continuous(name="Shannon diversity")
-  #facet_grid(~ Years, scales = "free")
 
 
 #boxplot years
