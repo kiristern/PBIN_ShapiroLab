@@ -87,7 +87,7 @@ virps3000 = prune_samples(sample_sums(viral_physeq)>=3000, viral_physeq)
 virps3000filt <- filter_taxa(virps3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 virfiltotu <- virps3000filt %>% otu_table()
-write.csv(virfiltotu, "viralCounts_filtered.csv")
+#write.csv(virfiltotu, "viralCounts_filtered.csv")
 
 
 #which rownames are different
@@ -99,7 +99,7 @@ viral_relab_otu <- viral_relab_ps %>% otu_table()
 viralfilt_relab_otu <- viral_relab_otu[rownames(virfiltotu),]
 dim(viralfilt_relab_otu)
 dim(virfiltotu)
-write.csv(viralfilt_relab_otu, "viralfilt_relab.csv")
+#write.csv(viralfilt_relab_otu, "viralfilt_relab.csv")
 
 
 
@@ -171,6 +171,10 @@ md.p <- getMonthDay(taxa_abun_tab_pel)
 #ensure colours are the same across both plots (need to run pelagic script below)
 dd <- union(taxa_abun_tab_lit$species, taxa_abun_tab_pel$species)
 
+#convert taxa to factor with levels equal to dd variable (to incl all levels from both datasets)
+taxa_abun_tab_lit$species <- factor(taxa_abun_tab_lit$species, dd)
+taxa_abun_tab_pel$species <- factor(taxa_abun_tab_pel$species, dd)
+
 #generate distinct colours for each asv
 library("RColorBrewer")
 set.seed(24)
@@ -184,8 +188,8 @@ dd.col[names(dd.col) == "Other"] <- "lightgrey"
 plotRelAb <- function(rel_ab_tab, md, plotTitle){
   rel_ab_plot <- rel_ab_tab %>% 
     ggplot(aes(x =Sample, y = Abundance, fill = species, order = -species)) +
-    geom_bar(stat = "identity",position = position_stack(reverse = T)) + #position: Other should be top stack
-    scale_fill_manual("ASV", values = dd.col)+
+    geom_bar(stat = "identity")+
+    scale_fill_manual("ASV", values = dd.col, drop = F)+ #drop=F to prevent dropping of unused factor levels
     labs(x = "",
          y = "Relative Abundance",
          title = plotTitle) +
@@ -205,7 +209,7 @@ rel_ab_plot_lit <- plotRelAb(taxa_abun_tab_lit, md.l, "Relative Abundance (litto
 rel_ab_plot_pel <- plotRelAb(taxa_abun_tab_pel, md.p, "Relative Abundance (pelagic)")
 
 library(ggpubr)
-ggpubr::ggarrange(rel_ab_plot_pel, rel_ab_plot_lit, ncol=2, nrow=1, common.legend = F, legend="bottom")
+ggpubr::ggarrange(rel_ab_plot_pel, rel_ab_plot_lit, ncol=2, nrow=1, common.legend = T, legend="bottom")
 
 
 
