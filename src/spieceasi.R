@@ -1,58 +1,11 @@
 #https://github.com/zdk123/SpiecEasi 
+source("src/preprocess.R")
 library(SpiecEasi)
 library(igraph)
 
-cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
-doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
-micro_ps <- subset_taxa(bact_physeq, Genus == "g__Microcystis")
-
-#replace name so don't have to edit whole script
-#cyano_ps <- micro_ps
-
-#ensure viral ps has same samples as cyano_ps 
-meta2
-
-virps3000_samemeta <- virps3000
-
-sample_data(virps3000_samemeta) <- sample_data(virps3000)[get_variable(virps3000, "description") %in% meta2$description]
-
-sample_names(virps3000_samemeta) <- sample_data(virps3000_samemeta)$description
-
-#taxa_names(viral_physeq) <- paste0("vir_", taxa_names(viral_physeq))
-taxa_names(doli_ps) <- paste0("doli_", taxa_names(doli_ps))
-taxa_names(micro_ps) <- paste0("micro_", taxa_names(micro_ps))
-taxa_names(virps3000_samemeta) <- paste0("vir_", taxa_names(virps3000_samemeta))
-
-
-doli.ps <- prune_samples(rownames(sample_data(doli_ps)) %in% rownames(sample_data(virps3000_samemeta)), doli_ps)
-micro.ps <- prune_samples(rownames(sample_data(micro_ps)) %in% rownames(sample_data(virps3000_samemeta)), micro_ps)
-
-#reorder phyloseq by chronological date
-map <- sample_data(virps3000_samemeta)[order(sample_data(virps3000_samemeta)$Date),]
-toorder <- rownames(map)
-
-otu_table(virps3000_samemeta) <- otu_table(virps3000_samemeta)[,toorder]
-otu_table(doli.ps) <- otu_table(doli.ps)[,toorder]
-otu_table(micro.ps) <- otu_table(micro.ps)[,toorder]
-otu_table(bact_physeq) <- otu_table(bact_physeq)[,toorder]
-otu_table(cyano_ps) <- otu_table(cyano_ps)[,toorder]
-
-bactnoCyan <- subset_taxa(bact_physeq, !Phylum == "p__Cyanobacteria")
-bactnoCyan_filt <- filter_taxa(bactnoCyan, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-
-virps_filt <- filter_taxa(virps3000_samemeta, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-
-cyanops_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-# doli_filt <- filter_taxa(doli_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-# micro_filt <- filter_taxa(micro_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-
-
-virps_filt
-cyanops_filt 
-
 #spiec easi
-SE_viral_cyano <- spiec.easi(list(virps_filt, cyanops_filt), method='mb', nlambda=125,
-                   lambda.min.ratio=1e-5, pulsar.params = list(thresh = 0.05,
+SE_viral_cyano <- spiec.easi(list(virps_filt, cyanops_filt), method='mb', nlambda=100,
+                   lambda.min.ratio=1e-3, pulsar.params = list(thresh = 0.05,
                                                                subsample.ratio=0.8,
                                                                seed = 1234,
                                                                ncores=4))
@@ -76,7 +29,7 @@ getStability(SE_vir_bactnoCyan)
 
 #spiec easi
 vir.spie2 <- spiec.easi(virps_filt, method='mb', nlambda=100,
-                        lambda.min.ratio=1e-2, pulsar.params = list(thresh = 0.05,
+                        lambda.min.ratio=1e-3, pulsar.params = list(thresh = 0.05,
                                                                     subsample.ratio=0.8,
                                                                     seed = 1234,
                                                                     ncores=4))
@@ -113,7 +66,7 @@ vir.corr.tab <- igraph::as_data_frame(FG.ig.vir, what="edges")
 # strong.vir.corr.tab <- rbind(vir.corr.tab.4pos, vir.corr.tab.1neg)
 # head(strong.vir.corr.tab)
 
-write.csv(vir.corr.tab, "vir-vir.covar.csv")
+#write.csv(vir.corr.tab, "vir-vir.covar.csv")
 
 #plot vircyn connections with weights only
 virplot <- graph_from_data_frame(vir.corr.tab, directed = TRUE, vertices = NULL)
@@ -177,7 +130,7 @@ ggnet2(virplot,
 
 
 
-#### VIRAL 
+#### VIRAL CYANO ###
 #http://psbweb05.psb.ugent.be/conet/microbialnetworks/spieceasi.php
 betaMatsym <- as.matrix(symBeta(getOptBeta(SE_viral_cyano)))
 
@@ -399,7 +352,12 @@ ggnet2(vdm.plot,
        label = otu.id.vdm, label.size = 1)+
   ggtitle("Viral with Microcystis and Dolichospermum correlation network by clusters")
 
+# Mean degree (number of edges per ASV)
+edges.asv <- as.data.frame(table(covar.vdm$from))
+mean(edges.asv$Freq)
 
+# Mean centrality
+degree.vdm[]
 
 
 #### Viral - Doli Micro Positive ####

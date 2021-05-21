@@ -204,7 +204,7 @@ shan.lit.plot <- shan.lit[[2]]
 shan.lit.df <- shan.lit[[1]]
 shan.pel <- plot.shannon(vir_ps_pel, "Shannon diversity of pelagic samples")
 shan.pel.plot <- shan.pel[[2]]
-shan.pel.df <- shan.lit[[1]]
+shan.pel.df <- shan.pel[[1]]
 
 ggpubr::ggarrange(shan.lit.plot, shan.pel.plot, ncol=2, nrow=1, common.legend = T, legend="bottom")
 

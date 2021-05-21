@@ -11,7 +11,7 @@ library(vegan)
 
 #### UPLOAD DATA ####
 #upload viral ASV count table and metadata
-ASV_count <- read.table("ASVs_counts_copy.tsv", row.names = 1, header=T)
+ASV_count <- read.table("data/ASVs_counts_copy.tsv", row.names = 1, header=T)
 str(ASV_count)
 dim(ASV_count)
 range(ASV_count)
@@ -21,29 +21,29 @@ summary(ASV_count)
 
 colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
 head(ASV_count, n=2)
-meta <- read.csv("meta_cmd.csv", row.names = 1, header = T)
-head(meta, n=2)
-#meta$Years <- as.factor(meta$Years)
-meta$Years <- as.factor(meta$Years)
-meta$Date <- as.Date(meta$Date)
-str(meta)
+metadat <- read.csv("data/meta_cmd.csv", row.names = 1, header = T)
+head(metadat, n=2)
+#metadat$Years <- as.factor(metadat$Years)
+metadat$Years <- as.factor(metadat$Years)
+metadat$Date <- as.Date(metadat$Date)
+str(metadat)
 
 #order meta by date
-meta <- meta[order(meta$Date),]
+metadat <- metadat[order(metadat$Date),]
 
-#get basic meta data info for methods section of report
+#get basic metadat data info for methods section of report
 length(ASV_count)
-nrow(meta)
-(amt <- meta %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
+nrow(metadat)
+(amt <- metadat %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
 min(amt[,2])
 max(amt[,2])
 median(as.numeric(unlist(amt[,2]))) #get median samples per year
-meta %>% group_by(Site) %>% summarise(amount=length(Site))
+metadat %>% group_by(Site) %>% summarise(amount=length(Site))
 
 #ensure same samples between ASV_count and meta
-asv_count<- ASV_count[,(colnames(ASV_count) %in% rownames(meta))]
+asv_count<- ASV_count[,(colnames(ASV_count) %in% rownames(metadat))]
 length(asv_count)
-nrow(meta)
+nrow(metadat)
 
 
 #### CREATE PHYLOSEQ OBJECT ####
@@ -55,10 +55,10 @@ library(microbiome)
 nozero <- asv_count[rownames(asv_count) %in% names(rowSums(asv_count > 0)),]
 length(rowSums(asv_count > 0)) == nrow(asv_count)
 count_phy <- otu_table(asv_count, taxa_are_rows=T)
-sample_info <- sample_data(meta)
-virTree <- read_tree("viral_tree")
+sample_info <- sample_data(metadat)
+virTree <- read_tree("data/viral_tree")
 
-fake_taxa <- read.table("fake_viral_tax.txt", header = T, row.names = 1, fill=T)
+fake_taxa <- read.table("data/fake_viral_tax.txt", header = T, row.names = 1, fill=T)
 mock_taxa <- tax_table(fake_taxa)
 mock_taxa[,7] <- str_remove(mock_taxa[,7], "s__")
 row.names(mock_taxa) <- mock_taxa[,7]
@@ -96,3 +96,60 @@ asv_filt <- virps3000filt %>% otu_table()
 #write.table(asv_filt, "asv_filt.tsv")
 
 vir_abun_filt <- virps3000 %>% otu_table()
+
+
+
+### SpiecEasi ###
+source("src/bacteria_analysis.R")
+#subset by taxa
+cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
+doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
+micro_ps <- subset_taxa(bact_physeq, Genus == "g__Microcystis")
+
+#replace name so don't have to edit whole script
+#cyano_ps <- micro_ps
+
+#ensure viral ps has same samples as cyano_ps 
+meta2
+
+virps3000_samemeta <- virps3000filt
+
+sample_data(virps3000_samemeta) <- sample_data(virps3000filt)[get_variable(virps3000filt, "description") %in% meta2$description]
+
+sample_names(virps3000_samemeta) <- sample_data(virps3000_samemeta)$description
+
+#taxa_names(viral_physeq) <- paste0("vir_", taxa_names(viral_physeq))
+taxa_names(doli_ps) <- paste0("doli_", taxa_names(doli_ps))
+taxa_names(micro_ps) <- paste0("micro_", taxa_names(micro_ps))
+taxa_names(virps3000_samemeta) <- paste0("vir_", taxa_names(virps3000_samemeta))
+
+
+doli.ps <- prune_samples(rownames(sample_data(doli_ps)) %in% rownames(sample_data(virps3000_samemeta)), doli_ps)
+micro.ps <- prune_samples(rownames(sample_data(micro_ps)) %in% rownames(sample_data(virps3000_samemeta)), micro_ps)
+
+#reorder phyloseq by chronological date
+map <- sample_data(virps3000_samemeta)[order(sample_data(virps3000_samemeta)$Date),]
+toorder <- rownames(map)
+
+otu_table(virps3000_samemeta) <- otu_table(virps3000_samemeta)[,toorder]
+otu_table(doli.ps) <- otu_table(doli.ps)[,toorder]
+otu_table(micro.ps) <- otu_table(micro.ps)[,toorder]
+otu_table(bact_physeq) <- otu_table(bact_physeq)[,toorder]
+otu_table(cyano_ps) <- otu_table(cyano_ps)[,toorder]
+
+bactnoCyan <- subset_taxa(bact_physeq, !Phylum == "p__Cyanobacteria")
+bactnoCyan_filt <- filter_taxa(bactnoCyan, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+
+virps_filt <- filter_taxa(virps3000_samemeta, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+
+cyanops_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+# doli_filt <- filter_taxa(doli_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+# micro_filt <- filter_taxa(micro_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+
+
+virps_filt
+cyanops_filt 
+
+
+
+

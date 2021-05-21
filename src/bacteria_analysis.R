@@ -1,7 +1,7 @@
 #upload cyano ASV data
-cyano_counts <- read.table("cyano/Champ_ASVs_counts.txt", header = TRUE, row.names = 1)
+cyano_counts <- read.table("data/Champ_ASVs_counts.txt", header = TRUE, row.names = 1)
 head(cyano_counts)
-cyano_taxa <- read.csv("cyano/ASVs_taxonomy_Champ_Greengenes.csv", header = T, row.names = 1, fill=T)
+cyano_taxa <- read.csv("data/ASVs_taxonomy_Champ_Greengenes.csv", header = T, row.names = 1, fill=T)
 head(cyano_taxa)
 
 nrow(meta)
@@ -16,7 +16,7 @@ colnames(cyano_counts)[1:135] <- substring(colnames(cyano_counts)[1:135], 2)
 cyano_counts <- cyano_counts[1:135]
 
 #match sample dates
-meta2 <- meta
+meta2 <- metadat
 
 #make sure meta matches cyano samples
 nrow(meta2)
@@ -37,7 +37,6 @@ library(phyloseq)
 bac_count <- otu_table(bact_counts, taxa_are_rows = T)
 dim(bac_count)
 bact_tax_tab <- tax_table(cyano_taxa)
-dim(cyano_taxa_ps)
 rownames(bact_tax_tab) <- rownames(cyano_taxa)
 
 #add to phyloseq object
@@ -70,7 +69,7 @@ bact3000 = prune_samples(sample_sums(bact_physeq)>=3000, bact_physeq)
 bact3000filt <- filter_taxa(bact3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 bactfiltotu <- bact3000filt %>% otu_table()
-write.csv(bactfiltotu, "bacteriaCounts_filtered.csv")
+#write.csv(bactfiltotu, "bacteriaCounts_filtered.csv")
 
 
 bactotutab <- bact_physeq %>% otu_table()
@@ -81,67 +80,6 @@ bact_relab_otu <- bact_relab_ps %>% otu_table()
 bactfilt_relab_otu <- bact_relab_otu[which(rownames(bactfiltotu) %in% rownames(bactotutab)),]
 dim(bactfilt_relab_otu)
 dim(bactfiltotu)
-write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
+#write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
 
-
-
-
-cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
-
-
-# ALPHA DIV #
-#richness by year
-ba_bact <- breakaway(cyano_ps)
-ba_bact
-
-ba_cyano_df = data.frame("richness" = (ba_bact %>% summary)$estimate,
-                        "sample" = (ba_bact %>% summary)$sample_names,
-                        "error" = (ba_bact %>% summary)$error,
-                     "Years" = bact_physeq %>% sample_data %>% get_variable("Years"),
-                     "Upper" = (ba_bact %>% summary)$upper,
-                     "Lower" = (ba_bact %>% summary)$lower)
-head(ba_cyano_df)
-str(ba_cyano_df)
-ggplot(ba_cyano_df, aes(x = fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
-        geom_point()+
-        geom_pointrange(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper)))+ #vs. geom_errorbar
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
-        plot.title = element_text(hjust = 0.5))+ #center title
-        ggtitle("Breakaway richness by sample")+
-        scale_x_discrete(labels = bact_physeq %>% sample_data %>% get_variable("Months"), name="Month")#change x-axis sample name to Month
-
-# # alpha diversity for (filtered) cyano only
-# ba_cyano <- breakaway(cyano_ps)
-# ba_cyano
-# 
-# ba_cyano_df = data.frame("richness" = (ba_cyano %>% summary)$estimate,
-#                         "sample" = (ba_cyano %>% summary)$sample_names,
-#                         "error" = (ba_cyano %>% summary)$error,
-#                         "Years" = cyano_ps %>% sample_data %>% get_variable("Years"),
-#                         "Upper" = (ba_cyano %>% summary)$upper,
-#                         "Lower" = (ba_cyano %>% summary)$lower)
-# head(ba_cyano_df)
-# str(ba_cyano_df)
-# ggplot(ba_cyano_df, aes(x = fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
-#   geom_point()+
-#   geom_pointrange(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper)))+ #vs. geom_errorbar
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
-#         plot.title = element_text(hjust = 0.5))+ #center title
-#   ggtitle("Breakaway richness by sample")+
-#   scale_x_discrete(labels = cyano_ps %>% sample_data %>% get_variable("Months"), name="Month")#change x-axis sample name to Month
-
-  
-
-#boxplot years
-(ba_plot <-  ggplot(ba_cyano_df, aes(x = Years, y = richness))+
-    geom_point()) + stat_summary(fun.data="mean_sdl", fun.args = list(mult=1), 
-                                 geom="crossbar", width=0.5) + theme_minimal()+
-  ggtitle("Observed richness by year")+
-  theme(plot.title = element_text(hjust=0.5))+
-  scale_y_continuous(name = "Observed richness")
-
-
-
-#### Shannon diversity ####
-ba_shannon <- estimate_richness(cyano_ps, measures="Shannon")
 
