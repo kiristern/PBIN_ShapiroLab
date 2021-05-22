@@ -353,12 +353,27 @@ ggnet2(vdm.plot,
   ggtitle("Viral with Microcystis and Dolichospermum correlation network by clusters")
 
 # Mean degree (number of edges per ASV)
-edges.asv <- as.data.frame(table(covar.vdm$from))
+edges.asv <- as.data.frame(table(covar.vdm$to))
 mean(edges.asv$Freq)
+#get centrality for bacterial nodes only
+doli.E.deg <- edges.asv %>%
+  filter(across(Var1, ~grepl("doli_", .)))
+micro.E.deg <- edges.asv %>%
+  filter(across(Var1, ~grepl("micro_", .)))
+md.E.deg <- rbind(doli.E.deg, micro.E.deg)
+mean(md.E.deg$Freq)
 
 # Mean centrality
-degree.vdm[]
-
+degree.vdm.df <- as.data.frame(degree.vdm)
+mean(degree.vdm.df$degree.vdm)
+#get centrality for bacterial nodes only
+degree.vdm.df$asv <- rownames(degree.vdm.df)
+doli.centrality <- degree.vdm.df %>%
+  filter(across(asv, ~grepl("doli_", .))) 
+micro.centrality <- degree.vdm.df %>%
+  filter(across(asv, ~grepl("micro_", .))) 
+md.centrality <- rbind(doli.centrality, micro.centrality)
+mean(md.centrality$degree.vdm)
 
 #### Viral - Doli Micro Positive ####
 # #postive weights only:
