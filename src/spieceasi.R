@@ -204,6 +204,10 @@ ggnet2(vircyan.plot,
 #guides(size=FALSE)
 
 
+
+
+
+
 betaMatsym2 <- as.matrix(symBeta(getOptBeta(SE_vir_dol_mic)))
 
 bm2 <- symBeta(getOptBeta(SE_vir_dol_mic), mode="maxabs")
@@ -256,18 +260,27 @@ ggnet2(vdm.plot,
        label = otu.id.vdm, label.size = 1)+
   ggtitle("Viral and Microcystis/Dolichospermum correlation network")
 
-clust.vdm<- cluster_fast_greedy(as.undirected(vdm.plot), weights = abs(E(vdm.plot)$weight))
+clust.vdm <- cluster_fast_greedy(as.undirected(vdm.plot), weights = abs(E(vdm.plot)$weight))
 
-modularity(clust.vdm)
-# B4 = modularity_matrix(vdm.plot, membership(clust.vdm))
 #membership of nodes
-membership(clust.vdm)
+memb.vdm <- membership(clust.vdm)
+memb.vdm
+#modularity
+modularity(clust.vdm, memb.vdm)
+B4 = modularity_matrix(vdm.plot, membership(clust.vdm))
 #number of communities
 length(clust.vdm)
 #size of communities
 sizes(clust.vdm)
+mean(sizes(clust.vdm))
+min(sizes(clust.vdm))
+max(sizes(clust.vdm))
+median(sizes(clust.vdm))
+
 #crossing edges
-crossing(clust.vdm, vdm.plot)
+crossE <- crossing(clust.vdm, vdm.plot)
+length(which(crossE == T))
+
 
 #plot communities without shaded regions
 ggnet2(vdm.plot,
@@ -304,6 +317,8 @@ micro.centrality <- degree.vdm.df %>%
   filter(across(asv, ~grepl("micro_", .))) 
 md.centrality <- rbind(doli.centrality, micro.centrality)
 mean(md.centrality$degree.vdm)
+
+
 
 
 
@@ -404,31 +419,25 @@ plaw.fit
 plot_dendrogram(clust.cyan.pos)
 
 #Check which OTUs are part of different modules.
-clust.cyan.posOneIndices=which(clust.cyan.pos$membership==1)
-clust.cyan.posOneOtus=clust.cyan.pos$names[clust.cyan.posOneIndices]
-clust.cyan.posOneOtus
-#OR
-clust.cyan.pos[2]
+clust.vdm.OneIndices <- which(clust.vdm$membership > 1)
+clust.vdm.OneOtus <- clust.vdm$names[clust.vdm.OneIndices]
+clust.vdm.OneOtus
 
-
-names(clust.vdm.pos$membership)[clust.vdm.pos$membership > 1]
-clust.vdm.pos
-
-
+clust.vdm[1]
 
 
 #see which edge connects two different communities
-com <- as.data.frame(which(crossing(clust.vdm.pos, vdm.pos.plot) == T))
+com <- as.data.frame(which(crossing(clust.vdm, vdm.plot) == T))
 com$link <- row.names(com)
-length(which(crossing(clust.vdm.pos, vdm.pos.plot) == T)) #number of cross community interactions
+length(which(crossing(clust.vdm, vdm.plot) == T)) #number of cross community interactions
 com <- data.frame(do.call('rbind', strsplit(as.character(com$link),'|',fixed=TRUE)))
 com
 
 links <- vdm[vdm$from %in% com$X1,]
 node_name <- unique(links$from)
 
-not_node_indices <- which(E(vdm.pos.plot)$start != node_name) 
-not_joined_edges <- E(vdm.pos.plot)[not_node_indices] 
+not_node_indices <- which(E(vdm.plot)$start != node_name) 
+not_joined_edges <- E(vdm.plot)[not_node_indices] 
 n <-delete_edges(vdm.pos.plot, not_joined_edges) 
 
 
@@ -436,5 +445,3 @@ n1 <- make_ego_graph(vdm.pos.plot, order=1, nodes=node_name)
 n2 <- do.call(union, n1)
 
 subgraph(vdm.pos.plot, n2)
-
-
