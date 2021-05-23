@@ -11,7 +11,7 @@ library(vegan)
 
 #### UPLOAD DATA ####
 #upload viral ASV count table and metadata
-ASV_count <- read.table("data/ASVs_counts_copy.tsv", row.names = 1, header=T)
+ASV_count <- read.table("../data/ASVs_counts_copy.tsv", row.names = 1, header=T)
 str(ASV_count)
 dim(ASV_count)
 range(ASV_count)
@@ -21,7 +21,7 @@ summary(ASV_count)
 
 colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
 head(ASV_count, n=2)
-metadat <- read.csv("data/meta_cmd.csv", row.names = 1, header = T)
+metadat <- read.csv("../data/meta_cmd.csv", row.names = 1, header = T)
 head(metadat, n=2)
 #metadat$Years <- as.factor(metadat$Years)
 metadat$Years <- as.factor(metadat$Years)
@@ -56,9 +56,9 @@ nozero <- asv_count[rownames(asv_count) %in% names(rowSums(asv_count > 0)),]
 length(rowSums(asv_count > 0)) == nrow(asv_count)
 count_phy <- otu_table(asv_count, taxa_are_rows=T)
 sample_info <- sample_data(metadat)
-virTree <- read_tree("data/viral_tree")
+virTree <- read_tree("../data/viral_tree")
 
-fake_taxa <- read.table("data/fake_viral_tax.txt", header = T, row.names = 1, fill=T)
+fake_taxa <- read.table("../data/fake_viral_tax.txt", header = T, row.names = 1, fill=T)
 mock_taxa <- tax_table(fake_taxa)
 mock_taxa[,7] <- str_remove(mock_taxa[,7], "s__")
 row.names(mock_taxa) <- mock_taxa[,7]
@@ -100,7 +100,7 @@ vir_abun_filt <- virps3000 %>% otu_table()
 
 
 ### SpiecEasi ###
-source("src/bacteria_analysis.R")
+source("../src/bacteria_analysis.R")
 #subset by taxa
 cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
 doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
