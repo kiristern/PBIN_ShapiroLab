@@ -5,19 +5,19 @@ library(lubridate)
 library(naniar)
 
 #upload weather data
-weather_2006 <- read.csv("fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
-weather_2007 <- read.csv("fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
-weather_2008 <- read.csv("fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
-weather_2009 <- read.csv("fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
-weather_2010 <- read.csv("fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
-weather_2011 <- read.csv("fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
-weather_2012 <- read.csv("fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
-weather_2013 <- read.csv("fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
-weather_2014 <- read.csv("fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
-weather_2015 <- read.csv("fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
-weather_2016 <- read.csv("fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
-weather_2017 <- read.csv("fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
-weather_2018 <- read.csv("fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
+weather_2006 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
+weather_2007 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
+weather_2008 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
+weather_2009 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
+weather_2010 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
+weather_2011 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
+weather_2012 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
+weather_2013 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
+weather_2014 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
+weather_2015 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
+weather_2016 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
+weather_2017 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
+weather_2018 <- read.csv("../data/raw data/fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
 
 #merge all weather dataframes
 weather <- Reduce(function(x,y) merge(x, y, all=TRUE), list(weather_2006, weather_2007, weather_2008,
@@ -38,7 +38,6 @@ weather <- weather %>% rename(Date = Date.Heure, Temp.moy = Temp.moy...C., Preci
 #convert commas to periods & keep values as.numeric
 weather$Temp.moy <- as.numeric(gsub(",", ".", weather$Temp.moy))
 
-#convert commas to periods & keep values as.numeric
 weather$Precip.tot <- as.numeric(gsub(",", ".", weather$Precip.tot))
 
 # write.csv(weather, "weather.csv")
@@ -185,7 +184,7 @@ write.csv(meta2, "metadata2.csv")
 
 
 ##### merge metatable (from metadata_w_cmd.csv) -- add microcystin data ######
-env_tab <- read.table("File_S1_Environmental_Table.txt")
+env_tab <- read.table("../data/raw data/File_S1_Environmental_Table.txt")
 head(env_tab)
 head(meta)
 
