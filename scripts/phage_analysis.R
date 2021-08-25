@@ -1,9 +1,9 @@
 # No transformations: Alpha and Beta diversity, Mantel, Procruste
-setwd("~/Documents/GitHub/PBIN_ShapiroLab/data")
+setwd("~/Documents/GitHub/PBIN_ShapiroLab")
 
 #import scripts
-source("../src/functions.R")
-source("../src/preprocess.R")
+source("scripts/functions.R")
+source("scripts/preprocess.R")
 
 
 ## sequences per sample
