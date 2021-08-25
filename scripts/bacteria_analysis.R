@@ -1,7 +1,7 @@
 #upload cyano ASV data
-cyano_counts <- read.table("../data/Champ_ASVs_counts.txt", header = TRUE, row.names = 1)
+cyano_counts <- read.table("data/Champ_ASVs_counts.txt", header = TRUE, row.names = 1)
 head(cyano_counts)
-cyano_taxa <- read.csv("../data/ASVs_taxonomy_Champ_Greengenes.csv", header = T, row.names = 1, fill=T)
+cyano_taxa <- read.csv("data/ASVs_taxonomy_Champ_Greengenes.csv", header = T, row.names = 1, fill=T)
 head(cyano_taxa)
 
 nrow(meta)
