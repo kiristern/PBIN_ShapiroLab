@@ -144,8 +144,8 @@ samp_meta$Period <- getSeason(samp_meta$Date)
 head(samp_meta)
 
 env_data <- read.table('data/raw data/File_S1_Environmental_Table.txt')
-colnames(env_data) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.Phos', 'Tot.Nitr', 'Dissolved.Phos', 
-                        'Dissolved.Nitr', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
+colnames(env_data) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+                        'Dissolved.N', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
 head(env_data)
 env_data_filtered <- env_data[colnames(env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                                                         'Dissolved.N', 'Microcystin', 'Description')]
@@ -179,4 +179,6 @@ row.names(meta_all) <- meta_all$sampleID
 meta_all <- meta_all[, !colnames(meta_all) == 'sampleID']
 
 head(meta_all)
+
+#write.csv(meta_all, 'data/metadata.csv')
 
