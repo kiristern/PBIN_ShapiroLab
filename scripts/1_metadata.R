@@ -171,14 +171,18 @@ get_date_range('2006-06-13') #7 days leading up to date of interest
 
 
 #merge dataframes to get final metadata table
-meta_all <- merge(samp_meta, meta, by = 'Date')
-meta_all <- merge(meta_all, env_data_filtered, by.x = 'description', by.y = 'Description')
+nrow(samp_meta)
+nrow(meta)
+meta_all <- merge(samp_meta, meta, by = 'Date', all.x=T)
+nrow(meta_all)
+nrow(env_data_filtered)
+meta_all <- merge(meta_all, env_data_filtered, by.x = 'description', by.y = 'Description', all.x=T)
+nrow(meta_all)
 
 #clean up meta_all df
 row.names(meta_all) <- meta_all$sampleID
 meta_all <- meta_all[, !colnames(meta_all) == 'sampleID']
 
 head(meta_all)
-
 #write.csv(meta_all, 'data/metadata.csv')
 
