@@ -7,6 +7,7 @@ citation("phyloseq")
 library(tidyverse)
 library(stringr)
 library(vegan)
+library(lubridate)
 
 
 #### UPLOAD DATA ####
@@ -23,9 +24,11 @@ colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_1
 head(ASV_count, n=2)
 metadat <- read.csv("data/meta_cmd.csv", row.names = 1, header = T)
 head(metadat, n=2)
-#metadat$Years <- as.factor(metadat$Years)
 metadat$Years <- as.factor(metadat$Years)
 metadat$Date <- as.Date(metadat$Date)
+metadat$Day <- format(as.Date(metadat$Date, format="%Y-%m-%d"), "%d")
+metadat$month.numeric <- format(as.Date(metadat$Date, format="%Y-%m-%d"), "%m")
+metadat$week <- lubridate::week(ymd(metadat$Date))
 str(metadat)
 
 #order meta by date
@@ -34,6 +37,7 @@ metadat <- metadat[order(metadat$Date),]
 #get basic metadat data info for methods section of report
 length(ASV_count)
 nrow(metadat)
+print("ASV and metadata have different sampling date lengths")
 (amt <- metadat %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
 min(amt[,2])
 max(amt[,2])
@@ -147,13 +151,13 @@ bactnoCyan_filt <- filter_taxa(bactnoCyan, function(x) sum(x > 1) > (0.10*length
 
 virps_filt <- filter_taxa(virps3000_samemeta, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
-cyanops_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+cyano.ps_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 # doli_filt <- filter_taxa(doli_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 # micro_filt <- filter_taxa(micro_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 
 virps_filt
-cyanops_filt 
+cyano.ps_filt 
 
 
 
