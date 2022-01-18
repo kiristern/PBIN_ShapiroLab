@@ -4,7 +4,7 @@ head(cyano_counts)
 cyano_taxa <- read.csv("data/ASVs_taxonomy_Champ_Greengenes.csv", header = T, row.names = 1, fill=T)
 head(cyano_taxa)
 
-nrow(meta)
+nrow(metadat)
 length(cyano_counts)
 
 cyano_taxa$Species <- rownames(cyano_taxa)
@@ -37,8 +37,10 @@ length(bact_counts)
 
 meta2 <- meta2[meta2$description %in% colnames(bact_counts),]
 nrow(meta2)
-rownames(meta2) <- meta2$description
+rownames(meta2) <- meta2$description #need rownames to match colnames of bact_count for phyloseq object
 
+# which(duplicated(meta2$description)) #fixed in preprocess.R
+# meta2$description[90]
 
 #Phyloseq
 library(phyloseq)
@@ -74,10 +76,8 @@ colnames(tax_table(bact_physeq)) <- c("Kingdom", "Phylum", "Class",
 
 #quick check
 bact_physeq %>% tax_table %>% head()
-bps <- bact_physeq %>% tax_table
-bps[82,]
-
-bact_abun <- bact_physeq %>% otu_table()
+bact_taxatab <- bact_physeq %>% tax_table
+bact_taxatab[82,]
 
 #reorder phyloseq by chronological date
 all(colnames(bact_counts) %in% rownames(meta2))
@@ -86,9 +86,12 @@ toorder <- rownames(map)
 otu_table(bact_physeq) <- otu_table(bact_physeq)[,toorder]
 bact_physeq %>% otu_table()
 
-# rm reads less than 3000
-bact3000 = prune_samples(sample_sums(bact_physeq)>=3000, bact_physeq)
 
+# rm reads less than 3000
+bact3000 <- prune_samples(sample_sums(bact_physeq)>=3000, bact_physeq)
+print("doesn't appear to have removed anything. Try with a greater filter?")
+
+# filter taxa not seen more than once in 10% of samples
 bact3000filt <- filter_taxa(bact3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 bactfiltotu <- bact3000filt %>% otu_table()
@@ -97,7 +100,7 @@ bactfiltotu <- bact3000filt %>% otu_table()
 
 bactotutab <- bact_physeq %>% otu_table()
 
-bact_relab_ps <- transform(bact_physeq, "clr", target="OTU")
+bact_relab_ps <- transform(bact_physeq, "compositional", target="OTU") #transform to relative abundance
 bact_relab_otu <- bact_relab_ps %>% otu_table()
 
 bactfilt_relab_otu <- bact_relab_otu[which(rownames(bactfiltotu) %in% rownames(bactotutab)),]

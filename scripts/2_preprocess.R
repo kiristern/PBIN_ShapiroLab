@@ -22,7 +22,8 @@ summary(ASV_count)
 
 colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
 head(ASV_count, n=2)
-metadat <- read.csv("data/meta_cmd.csv", row.names = 1, header = T)
+#metadat <- read.csv("data/metadata.csv", row.names = 1, header = T)
+metadat <- meta_all #run 1_metadata.R script 
 head(metadat, n=2)
 metadat$Years <- as.factor(metadat$Years)
 metadat$Date <- as.Date(metadat$Date)
@@ -35,19 +36,36 @@ str(metadat)
 metadat <- metadat[order(metadat$Date),]
 
 #get basic metadat data info for methods section of report
-length(ASV_count)
-nrow(metadat)
-print("ASV and metadata have different sampling date lengths")
+#check to make sure ASV data and metadata dates are the same
+if (length(ASV_count) == nrow(metadat)){
+  print("ASV and metadata have same sampling date lengths -- GREAT")
+  } else {
+    print("ASV and metadata have different sampling date lengths -- NOT GREAT")
+}
+
+
 (amt <- metadat %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
 min(amt[,2])
 max(amt[,2])
 median(as.numeric(unlist(amt[,2]))) #get median samples per year
 metadat %>% group_by(Site) %>% summarise(amount=length(Site))
 
-#ensure same samples between ASV_count and meta
-asv_count<- ASV_count[,(colnames(ASV_count) %in% rownames(metadat))]
-length(asv_count)
-nrow(metadat)
+# #ensure same samples between ASV_count and meta
+# names(ASV_count) %in% rownames(metadat)
+# #find which one is not the same
+# which(!names(ASV_count) %in% rownames(metadat))
+# names(ASV_count[100])
+
+#fix error above (commented out)
+rownames(metadat)[rownames(metadat) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
+metadat$description[rownames(metadat) == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
+
+# asv_count <- ASV_count[,(colnames(ASV_count) %in% rownames(metadat))]
+# length(asv_count)
+# nrow(metadat)
+
+asv_count <- ASV_count
+
 
 
 #### CREATE PHYLOSEQ OBJECT ####
@@ -56,10 +74,15 @@ library(microbiome)
 #VIRAL
 
 #add ASV count table, metadata, virTree to phyloseq table
-nozero <- asv_count[rownames(asv_count) %in% names(rowSums(asv_count > 0)),]
+nrow(asv_count)
+nozero <- asv_count[rownames(asv_count) %in% names(rowSums(asv_count > 0)),] #only keep ASVs that are present in data
+nrow(nozero)
 length(rowSums(asv_count > 0)) == nrow(asv_count)
+
 count_phy <- otu_table(asv_count, taxa_are_rows=T)
+dim(count_phy)
 sample_info <- sample_data(metadat)
+dim(sample_info)
 virTree <- read_tree("data/viral_tree")
 
 fake_taxa <- read.table("data/fake_viral_tax.txt", header = T, row.names = 1, fill=T)
@@ -68,15 +91,21 @@ mock_taxa[,7] <- stringr::str_remove(mock_taxa[,7], "s__")
 row.names(mock_taxa) <- mock_taxa[,7]
 colnames(mock_taxa)[7] <- "species"
 head(mock_taxa)
+dim(mock_taxa)
 #add to phyloseq object
-viral_physeq <- phyloseq(count_phy, sample_info, virTree, mock_taxa)
+viral_physeq <- phyloseq(count_phy, sample_info, mock_taxa) #, virTree) 
 viral_physeq %>% otu_table( ) %>% dim
 
-# rm reads less than 3000
-virps3000 = prune_samples(sample_sums(viral_physeq)>=3000, viral_physeq)
+print("it appears the viral phylogenetic tree removes some ASVs. Consider removing virTree from ps object")
+
+# rm reads fewer than 3000
+virps3000 <- prune_samples(sample_sums(viral_physeq)>=3000, viral_physeq)
+virps3000
+print("doesn't appear to have removed anything. Try with a greater filter?")
 
 # filter taxa not seen more than once in 10% of samples
 virps3000filt <- filter_taxa(virps3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+virps3000filt
 
 virfiltotu <- virps3000filt %>% otu_table()
 #write.csv(virfiltotu, "viralCounts_filtered.csv")
@@ -96,7 +125,7 @@ virfiltotu <- virps3000filt %>% otu_table()
 #which(taxa_sums(virps3000filt) == 0)
 
 #asv_count
-asv_filt <- virps3000filt %>% otu_table()
+# asv_filt <- virps3000filt %>% otu_table()
 #write.table(asv_filt, "asv_filt.tsv")
 
 
