@@ -22,8 +22,9 @@ summary(ASV_count)
 
 colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
 head(ASV_count, n=2)
-#metadat <- read.csv("data/metadata.csv", row.names = 1, header = T)
-metadat <- meta_all #run 1_metadata.R script 
+
+source("scripts/1_metadata.R")
+metadat <- meta_all #run 1_metadata.R script (line above)
 head(metadat, n=2)
 metadat$Years <- as.factor(metadat$Years)
 metadat$Date <- as.Date(metadat$Date)
