@@ -1,10 +1,10 @@
 #https://github.com/zdk123/SpiecEasi 
-source("src/preprocess.R")
+source("src/1_preprocess.R")
 library(SpiecEasi)
 library(igraph)
 
 #spiec easi
-SE_viral_cyano <- spiec.easi(list(virps_filt, cyanops_filt), method='mb', nlambda=100,
+SE_viral_cyano <- spiec.easi(list(virps_filt, cyano.ps_filt), method='mb', nlambda=100,
                    lambda.min.ratio=1e-3, pulsar.params = list(thresh = 0.05,
                                                                subsample.ratio=0.8,
                                                                seed = 1234,
