@@ -139,16 +139,42 @@ cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
 doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
 micro_ps <- subset_taxa(bact_physeq, Genus == "g__Microcystis")
 
+cyano_ps_relab <- subset_taxa(bact_relab_ps, Phylum == "p__Cyanobacteria")
+doli_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Dolichospermum")
+micro_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Microcystis")
+
+cyano_ps_helli <- subset_taxa(bact_helli_ps, Phylum == "p__Cyanobacteria")
+doli_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Dolichospermum")
+micro_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Microcystis")
+
+cyano_ps_clr <- subset_taxa(bact_clr_ps, Phylum == "p__Cyanobacteria")
+doli_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Dolichospermum")
+micro_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Microcystis")
+
 #replace name so don't have to edit whole script
 #cyano_ps <- micro_ps
 
-#ensure viral ps has same samples as cyano_ps 
-meta2
+# #ensure viral ps has same samples as cyano_ps 
+# meta2
 
-#put doli and micro counts per sample in metadata
+#put bacterial counts per sample in metadata
 meta2$micro.sum <- micro_ps %>% otu_table() %>% colSums()
 meta2$doli.sum <- doli_ps %>% otu_table() %>% colSums()
-meta2
+meta2$cyano.sum <- cyano_ps %>% otu_table() %>% colSums()
+
+meta2$micro.relab.sum <- micro_ps_relab %>% otu_table() %>% colSums()
+meta2$doli.relab.sum <- doli_ps_relab %>% otu_table() %>% colSums()
+meta2$cyano.relab.sum <- cyano_ps_relab %>% otu_table() %>% colSums()
+
+meta2$micro.helli.sum <- micro_ps_helli %>% otu_table() %>% colSums()
+meta2$doli.helli.sum <- doli_ps_helli %>% otu_table() %>% colSums()
+meta2$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
+
+meta2$micro.clr.sum <- micro_ps_clr %>% otu_table() %>% colSums()
+meta2$doli.clr.sum <- doli_ps_clr %>% otu_table() %>% colSums()
+meta2$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
+
+head(meta2)
 #write.csv(meta2, "~/Desktop/meta_w_dolimicroSums.csv")
 
 virps3000_samemeta <- virps3000filt

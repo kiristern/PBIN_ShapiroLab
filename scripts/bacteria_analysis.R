@@ -100,7 +100,11 @@ bactfiltotu <- bact3000filt %>% otu_table()
 
 bactotutab <- bact_physeq %>% otu_table()
 
-bact_relab_ps <- transform(bact_physeq, "compositional", target="OTU") #transform to relative abundance
+bact_relab_ps <- transform(bact_physeq, "compositional", target="OTU") #'compositional' abundances are returned as relative abundances in [0, 1] (convert to percentages by multiplying with a factor of 100).
+bact_helli_ps <- transform(bact_physeq, "hellinger", target="OTU") #Hellinger transform is square root of the relative abundance but instead given at the scale [0,1]
+bact_clr_ps <- transform(bact_physeq, "clr", target="OTU") #CLR transform applies a pseudocount of min(relative abundance)/2 to exact zero relative abundance entries in OTU table before taking logs.
+
+
 bact_relab_otu <- bact_relab_ps %>% otu_table()
 
 bactfilt_relab_otu <- bact_relab_otu[which(rownames(bactfiltotu) %in% rownames(bactotutab)),]
