@@ -132,7 +132,7 @@ virfiltotu <- virps3000filt %>% otu_table()
 
 
 
-### SpiecEasi ###
+### Bacterial preprocessing -- for SpiecEasi ###
 source("scripts/bacteria_analysis.R")
 #subset by taxa
 cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
@@ -177,11 +177,16 @@ meta2$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
 head(meta2)
 #write.csv(meta2, "~/Desktop/meta_w_dolimicroSums.csv")
 
+
+
+
 virps3000_samemeta <- virps3000filt
 
 sample_data(virps3000_samemeta) <- sample_data(virps3000filt)[get_variable(virps3000filt, "description") %in% meta2$description]
 
 sample_names(virps3000_samemeta) <- sample_data(virps3000_samemeta)$description
+virps3000_samemeta %>% sample_data() %>% head()
+
 
 #taxa_names(viral_physeq) <- paste0("vir_", taxa_names(viral_physeq))
 taxa_names(doli_ps) <- paste0("doli_", taxa_names(doli_ps))
