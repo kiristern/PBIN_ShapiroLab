@@ -1,5 +1,5 @@
 #https://github.com/zdk123/SpiecEasi 
-source("src/1_preprocess.R")
+source("scripts/1_preprocess.R")
 library(SpiecEasi)
 library(igraph)
 
