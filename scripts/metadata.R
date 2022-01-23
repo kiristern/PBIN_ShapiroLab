@@ -103,25 +103,30 @@ head(meta)
 
 
 # get all samples 
-samp_meta <- as.data.frame(colnames(samples))
-colnames(samp_meta) <- 'sampleID'
-samp_meta$Date <- get_date(samp_meta$sampleID)
+viral_meta <- as.data.frame(colnames(samples))
+colnames(viral_meta) <- 'sampleID'
+viral_meta$Date <- get_date(viral_meta$sampleID)
 
 #create new columns
-samp_meta$description <- sub("*._*._*._*._*._*._*._","", samp_meta$sampleID) #remove sample ID at beginning
-samp_meta$description <- gsub("_", ".", samp_meta$description) #replace _ with .
-samp_meta$Years <- format(as.Date(samp_meta$Date, format='%Y-%m-%d'), "%Y") #get year
-samp_meta$Month <- format(as.Date(samp_meta$Date, format='%Y-%m-%d'), "%m") #get month
+viral_meta$description <- sub("*._*._*._*._*._*._*._","", viral_meta$sampleID) #remove sample ID at beginning
+viral_meta$description <- gsub("_", ".", viral_meta$description) #replace _ with .
 
-#change month from numeric to title
-samp_meta$Month <- gsub("03", "March", samp_meta$Month)
-samp_meta$Month <- gsub("04", "April",samp_meta$Month)
-samp_meta$Month <- gsub("05", "May", samp_meta$Month)
-samp_meta$Month <- gsub("06", "June", samp_meta$Month)
-samp_meta$Month <- gsub("07", "July", samp_meta$Month)
-samp_meta$Month <- gsub("08", "August", samp_meta$Month)
-samp_meta$Month <- gsub("09", "September", samp_meta$Month)
-samp_meta$Month <- gsub("10", "October", samp_meta$Month)
+viral_meta$Years <- format(as.Date(viral_meta$Date, format='%Y-%m-%d'), "%Y") #get year
+
+format_month <- function(df){
+  df$Month <- format(as.Date(df$Date, format='%Y-%m-%d'), "%m") #get month
+  #change month from numeric to title
+  df$Month <- gsub("03", "March", df$Month)
+  df$Month <- gsub("04", "April",df$Month)
+  df$Month <- gsub("05", "May", df$Month)
+  df$Month <- gsub("06", "June", df$Month)
+  df$Month <- gsub("07", "July", df$Month)
+  df$Month <- gsub("08", "August", df$Month)
+  df$Month <- gsub("09", "September", df$Month)
+  df$Month <- gsub("10", "October", df$Month)
+}
+
+viral_meta$Month <- format_month(viral_meta)
 
 #assign season depending on date
 getSeason <- function(DATES) {
@@ -139,50 +144,50 @@ getSeason <- function(DATES) {
 }
 
 #assign season depending on date
-samp_meta$Period <- getSeason(samp_meta$Date)
+viral_meta$Period <- getSeason(viral_meta$Date)
 
-head(samp_meta)
+head(viral_meta)
 
-env_data <- read.table('data/raw data/File_S1_Environmental_Table.txt')
-colnames(env_data) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+viral_env_data <- read.table('data/raw data/File_S1_Environmental_Table.txt')
+colnames(viral_env_data) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                         'Dissolved.N', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
-head(env_data)
-env_data_filtered <- env_data[colnames(env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+head(viral_env_data)
+viral_env_data_filtered <- viral_env_data[colnames(viral_env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                                                         'Dissolved.N', 'Microcystin', 'Description')]
 
 
 #explore the data
 #make sure meta matches new meta samples
-nrow(samp_meta)
-nrow(env_data_filtered)
+nrow(viral_meta)
+nrow(viral_env_data_filtered)
 
-# env_data_filtered[which(env_data_filtered$Description %in% samp_meta$description), ] #see the rows from env_data_filtered that are in samp_meta
-# intersect(env_data_filtered$Description, samp_meta$description) #which ones are the same
-# length(setdiff(env_data_filtered$Description, samp_meta$description)) ##count how many are different
-# sum(!is.na(env_data_filtered$Microcystin)) #how many non NA values in Microcystin
+# viral_env_data_filtered[which(viral_env_data_filtered$Description %in% viral_meta$description), ] #see the rows from viral_env_data_filtered that are in viral_meta
+# intersect(viral_env_data_filtered$Description, viral_meta$description) #which ones are the same
+# length(setdiff(viral_env_data_filtered$Description, viral_meta$description)) ##count how many are different
+# sum(!is.na(viral_env_data_filtered$Microcystin)) #how many non NA values in Microcystin
 
 
 # compare metadata tables to see which information is accurate
 weather_2006[which(weather_2006$Date == '2006-06-13'),] #ground truth weather information from specific date
-env_data[which(env_data$SampleID == '13.06.2006.1c'), ]
+viral_env_data[which(viral_env_data$SampleID == '13.06.2006.1c'), ]
 meta[which(meta$Date == '2006-06-13'),]
 get_date_range('2006-06-13') #7 days leading up to date of interest
 
 
 
 #merge dataframes to get final metadata table
-nrow(samp_meta)
+nrow(viral_meta)
 nrow(meta)
-meta_all <- merge(samp_meta, meta, by = 'Date', all.x=T)
+meta_all <- merge(viral_meta, meta, by = 'Date', all.x=T)
 nrow(meta_all)
-nrow(env_data_filtered)
-meta_all <- merge(meta_all, env_data_filtered, by.x = 'description', by.y = 'Description', all.x=T)
+nrow(viral_env_data_filtered)
+meta_all <- merge(meta_all, viral_env_data_filtered, by.x = 'description', by.y = 'Description', all.x=T)
 nrow(meta_all)
 
 #clean up meta_all df
 row.names(meta_all) <- meta_all$sampleID
-meta_all <- meta_all[, !colnames(meta_all) == 'sampleID']
+vir_meta <- meta_all[, !colnames(meta_all) == 'sampleID']
 
-head(meta_all)
+head(vir_meta)
 #write.csv(meta_all, 'data/metadata.csv')
 
