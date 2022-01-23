@@ -133,46 +133,9 @@ virfiltotu <- virps3000filt %>% otu_table()
 
 ### Bacterial preprocessing -- for SpiecEasi ###
 source("scripts/bacteria_analysis.R")
-#subset by taxa
-cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
-doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
-micro_ps <- subset_taxa(bact_physeq, Genus == "g__Microcystis")
 
-cyano_ps_relab <- subset_taxa(bact_relab_ps, Phylum == "p__Cyanobacteria")
-doli_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Dolichospermum")
-micro_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Microcystis")
 
-cyano_ps_helli <- subset_taxa(bact_helli_ps, Phylum == "p__Cyanobacteria")
-doli_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Dolichospermum")
-micro_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Microcystis")
-
-# cyano_ps_clr <- subset_taxa(bact_clr_ps, Phylum == "p__Cyanobacteria")
-# doli_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Dolichospermum")
-# micro_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Microcystis")
-
-#replace name so don't have to edit whole script
-#cyano_ps <- micro_ps
-
-# #ensure viral ps has same samples as cyano_ps 
-# virbact_meta
-
-#put bacterial counts per sample in vir_metaa
-virbact_meta$micro.sum <- micro_ps %>% otu_table() %>% colSums()
-virbact_meta$doli.sum <- doli_ps %>% otu_table() %>% colSums()
-virbact_meta$cyano.sum <- cyano_ps %>% otu_table() %>% colSums()
-
-virbact_meta$micro.relab.sum <- micro_ps_relab %>% otu_table() %>% colSums()
-virbact_meta$doli.relab.sum <- doli_ps_relab %>% otu_table() %>% colSums()
-virbact_meta$cyano.relab.sum <- cyano_ps_relab %>% otu_table() %>% colSums()
-
-virbact_meta$micro.helli.sum <- micro_ps_helli %>% otu_table() %>% colSums()
-virbact_meta$doli.helli.sum <- doli_ps_helli %>% otu_table() %>% colSums()
-virbact_meta$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
-
-# virbact_meta$micro.clr.sum <- micro_ps_clr %>% otu_table() %>% colSums()
-# virbact_meta$doli.clr.sum <- doli_ps_clr %>% otu_table() %>% colSums()
-# virbact_meta$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
-
+bact_physeq %>% sample_data() %>% head()
 head(virbact_meta)
 dim(meta_all)
 #write.csv(virbact_meta, "~/Desktop/meta_w_dolimicroSums.csv")
@@ -217,7 +180,7 @@ cyano.ps_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x))
 # micro_filt <- filter_taxa(micro_ps, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 
-virps_filt
+virps_filt %>% sample_data() %>% head()
 cyano.ps_filt 
 
 

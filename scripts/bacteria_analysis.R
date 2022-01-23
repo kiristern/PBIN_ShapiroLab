@@ -128,12 +128,59 @@ bact_relab_ps <- microbiome::transform(bact_physeq, "compositional", target="OTU
 bact_helli_ps <-microbiome::transform(bact_physeq, "hellinger", target="OTU") #Hellinger transform is square root of the relative abundance but instead given at the scale [0,1]
 bact_clr_ps <- microbiome::transform(bact_physeq, "clr", target="OTU") #CLR transform applies a pseudocount of min(relative abundance)/2 to exact zero relative abundance entries in OTU table before taking logs.
 
-
 bact_relab_otu <- bact_relab_ps %>% otu_table()
 
 bactfilt_relab_otu <- bact_relab_otu[which(rownames(bactfiltotu) %in% rownames(bactotutab)),]
 dim(bactfilt_relab_otu)
 dim(bactfiltotu)
+
+
+#subset by taxa
+cyano_ps <- subset_taxa(bact_physeq, Phylum == "p__Cyanobacteria")
+doli_ps <- subset_taxa(bact_physeq, Genus == "g__Dolichospermum")
+micro_ps <- subset_taxa(bact_physeq, Genus == "g__Microcystis")
+
+cyano_ps_relab <- subset_taxa(bact_relab_ps, Phylum == "p__Cyanobacteria")
+doli_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Dolichospermum")
+micro_ps_relab <- subset_taxa(bact_relab_ps, Genus == "g__Microcystis")
+
+cyano_ps_helli <- subset_taxa(bact_helli_ps, Phylum == "p__Cyanobacteria")
+doli_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Dolichospermum")
+micro_ps_helli <- subset_taxa(bact_helli_ps, Genus == "g__Microcystis")
+
+# cyano_ps_clr <- subset_taxa(bact_clr_ps, Phylum == "p__Cyanobacteria")
+# doli_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Dolichospermum")
+# micro_ps_clr <- subset_taxa(bact_clr_ps, Genus == "g__Microcystis")
+
+#replace name so don't have to edit whole script
+#cyano_ps <- micro_ps
+
+# #ensure viral ps has same samples as cyano_ps 
+# virbact_meta
+
+#put bacterial counts per sample in vir_metaa
+virbact_meta$micro.sum <- micro_ps %>% otu_table() %>% colSums()
+virbact_meta$doli.sum <- doli_ps %>% otu_table() %>% colSums()
+virbact_meta$cyano.sum <- cyano_ps %>% otu_table() %>% colSums()
+
+virbact_meta$micro.relab.sum <- micro_ps_relab %>% otu_table() %>% colSums()
+virbact_meta$doli.relab.sum <- doli_ps_relab %>% otu_table() %>% colSums()
+virbact_meta$cyano.relab.sum <- cyano_ps_relab %>% otu_table() %>% colSums()
+
+virbact_meta$micro.helli.sum <- micro_ps_helli %>% otu_table() %>% colSums()
+virbact_meta$doli.helli.sum <- doli_ps_helli %>% otu_table() %>% colSums()
+virbact_meta$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
+
+# virbact_meta$micro.clr.sum <- micro_ps_clr %>% otu_table() %>% colSums()
+# virbact_meta$doli.clr.sum <- doli_ps_clr %>% otu_table() %>% colSums()
+# virbact_meta$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
+
+
+#update phyloseq object with new virbact_meta data
+sample_info_cyano <- sample_data(virbact_meta)
+bact_physeq <- phyloseq(bac_count, bact_tax_tab, sample_info_cyano)
+bact_physeq %>% sample_data() %>% head()
+
 #write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
 
 
