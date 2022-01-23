@@ -179,6 +179,11 @@ virbact_meta$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
 #update phyloseq object with new virbact_meta data
 sample_info_cyano <- sample_data(virbact_meta)
 bact_physeq <- phyloseq(bac_count, bact_tax_tab, sample_info_cyano)
+
+#rename cols
+colnames(tax_table(bact_physeq)) <- c("Kingdom", "Phylum", "Class",
+                                      "Order", "Family", "Genus", "ASV")
+
 bact_physeq %>% sample_data() %>% head()
 
 #write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
