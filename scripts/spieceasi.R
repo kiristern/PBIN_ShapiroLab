@@ -70,7 +70,7 @@ range(virspiec.deg)
 
 library(ggplot2)
 library(ggnet)
-ggnet2(virplot,
+ggnet2(vir.corr.tab,
        alpha=0.75,
        #shape = factor(dtype),
        #shape.legend = "Type",
@@ -107,7 +107,7 @@ length(which(crossing(clusters.vir, virplot) == T)) #number of cross community i
 
 #plot communities without shaded regions
 
-ggnet2(virplot,
+ggnet2(vir.corr.tab,
        color = membership(clusters.vir),
        alpha=0.75,
        node.size = virspiec.deg,
@@ -140,7 +140,7 @@ diag(bm) <- 0
 weights <- Matrix::summary(t(bm))[,3]
 FG.ig.vir.cyn <- adj2igraph(Matrix::drop0(getRefit(SE_viral_cyano)),
                             edge.attr=list(weight=weights),
-                            vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(cyanops_filt))))
+                            vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(cyano.ps_filt))))
 
 covar.vir.cyn <- igraph::as_data_frame(FG.ig.vir.cyn, what="edges")
 
@@ -167,7 +167,7 @@ range(degree.cyan)
 
 library(ggplot2)
 library(ggnet)
-ggnet2(vircyan.plot,
+ggnet2(vircyn,
        color = dtype.cyan, palette = c("Phage" = "#E1AF00", "Cyanobacteria" = "steelblue"), 
        alpha=0.75,
        #shape = factor(dtype),
@@ -190,7 +190,7 @@ modularity(clust.cyan)
 #modularity matrix
 B.cyan = modularity_matrix(vircyan.plot, membership(clust.cyan))
 
-ggnet2(vircyan.plot,
+ggnet2(vircyn,
        color = membership(clust.cyan),
        alpha=0.75,
        shape = factor(dtype.cyan),
@@ -248,7 +248,7 @@ otu.id.vdm <- colnames(SE_vir_dol_mic$est$data)
 
 degree.vdm <- igraph::degree(vdm.plot)
 
-ggnet2(vdm.plot,
+ggnet2(vdm,
        color = dtype.vdm, palette = c("Phage" = "#E1AF00", "Dolichospermum" = "red", "Microcystis" = "steelblue"), 
        alpha=0.75,
        #shape = factor(dtype),
@@ -283,7 +283,7 @@ length(which(crossE == T))
 
 
 #plot communities without shaded regions
-ggnet2(vdm.plot,
+ggnet2(vdm,
        color = membership(clust.vdm),
        alpha=0.75,
        shape = factor(dtype.vdm),
@@ -357,7 +357,7 @@ range(degree.cyan)
 
 library(ggplot2)
 library(ggnet)
-ggnet2(virbactnocyan.plot,
+ggnet2(BnoC,
        color = dtype.cyan, palette = c("Phage" = "#E1AF00", "Bacteria" = "steelblue"), 
        alpha=0.75,
        #shape = factor(dtype),
@@ -380,7 +380,7 @@ modularity(clust.cyan)
 #modularity matrix
 B.cyan = modularity_matrix(virbactnocyan.plot, membership(clust.cyan))
 
-ggnet2(virbactnocyan.plot,
+ggnet2(BnoC,
        color = membership(clust.cyan),
        alpha=0.75,
        shape = factor(dtype.cyan),
