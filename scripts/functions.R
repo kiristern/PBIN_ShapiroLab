@@ -139,7 +139,7 @@ plot.shannon <- function(ps.obj, plotTitle){
   vir_shannon$date <- sub("^([^_]*.[^_]*.[^_]*.[^_]*).*$",'\\1', rownames(vir_shannon))
   vir_shannon$date <- gsub("^[^_]*_", "",vir_shannon$date) #remove sample name -- just keep date
   vir_shannon$date <- as.Date(vir_shannon$date, format="%d_%m_%Y")
-  vir_shannon$bloom <- ps.obj %>% sample_data %>% get_variable("bloom2")
+  vir_shannon$bloom <- ps.obj %>% sample_data %>% get_variable("Bloom")
   
   m <- month(vir_shannon$date)
   d <- day(vir_shannon$date)
@@ -190,7 +190,7 @@ shan.years <- function(df){
 
 #boxplot shannon bloom/no bloom and site
 box.shannon <- function(ps.obj, env.var){
-  shannon_bloom = data.frame("Shannon" = vir_shannon$Shannon,
+  shannon_bloom = data.frame("Shannon" = vir_shannon[[1]]$Shannon,
                              env.var = ps.obj %>% sample_data %>% get_variable(env.var))
   shan_yn <- na.omit(shannon_bloom[1:2])
   

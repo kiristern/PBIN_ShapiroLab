@@ -3,7 +3,7 @@ setwd("~/Documents/GitHub/PBIN_ShapiroLab")
 
 #import scripts
 source("scripts/functions.R")
-source("scripts/preprocess.R")
+source("scripts/1_preprocess.R")
 
 
 ## sequences per sample
@@ -105,7 +105,7 @@ ba_year
 
 
 #richness by bloom/no-bloom and site
-box.bloom <- plotbox(viral_physeq, "bloom2")
+box.bloom <- plotbox(viral_physeq, "Bloom")
 box.bloom[[2]]
 box.bloom.df <- box.bloom[[1]]
 
@@ -219,7 +219,7 @@ shan.years(shan.lit.df)
 
 
 # shannon by bloom/no bloom and site
-box.shan.bloom <- box.shannon(viral_physeq, "bloom2")
+box.shan.bloom <- box.shannon(viral_physeq, "Bloom")
 box.shan.bloom[[2]]
 shan.bloom <- box.shan.bloom[[1]]
 
@@ -280,7 +280,7 @@ ggplot(viral_df, aes(x = forcats::fct_inorder(sample), y = shannon, color = Year
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
         plot.title = element_text(hjust = 0.5))+ #center title
   ggtitle("Shannon diversity by sample")+
-  scale_x_discrete(labels = viral_physeq %>% sample_data %>% get_variable("Months"), name="Month")#change x-axis sample name to Month
+  scale_x_discrete(labels = viral_physeq %>% sample_data %>% get_variable("Month"), name="Month")#change x-axis sample name to Month
 
 ### sampling depth (reads per sample)
 summary(sample_sums(viral_physeq)) #large difference in number of reads, min=22; max=130183
