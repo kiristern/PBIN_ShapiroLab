@@ -1,5 +1,5 @@
-library("dplyr")
-library("tidyverse")
+library(dplyr)
+library(tidyverse)
 library(tidyr)
 library(lubridate)
 library(naniar)
@@ -32,8 +32,12 @@ weather <-replace_na(weather)
 weather$Date.Heure <- as.Date(weather$Date.Heure)
 
 #rename cols & keep only what is useful to me
-weather <- weather %>% rename(Date = Date.Heure, Temp.moy = Temp.moy...C., Precip.tot = Précip..tot...mm.) %>%
-                        select(Date, Temp.moy, Precip.tot) 
+#weather <- weather %>% rename(Date = Date.Heure, Temp.moy = Temp.moy...C., Precip.tot = Précip..tot...mm.) %>%
+#                        select(Date, Temp.moy, Precip.tot) 
+names(weather)[names(weather) == 'Date.Heure'] <- "Date"
+names(weather)[names(weather) == "Temp.moy...C."] <- 'Temp.moy'
+names(weather)[names(weather) == "Précip..tot...mm."] <- 'Precip.tot'
+weather <- weather[,c('Date', 'Temp.moy', 'Precip.tot')]
 
 #convert commas to periods & keep values as.numeric
 weather$Temp.moy <- as.numeric(gsub(",", ".", weather$Temp.moy))
