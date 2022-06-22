@@ -13,7 +13,7 @@ library(lubridate)
 
 
 #### UPLOAD DATA ####
-#upload viral ASV count table and vir_metaa
+#upload viral ASV count table and metadataa
 ASV_count <- read.table("data/ASVs_counts_copy.tsv", row.names = 1, header=T)
 str(ASV_count)
 dim(ASV_count)
@@ -26,46 +26,52 @@ colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_1
 
 head(ASV_count, n=2)
 
-source("scripts/metadata.R")
-head(vir_meta, n=2)
-vir_meta$Years <- as.factor(vir_meta$Years)
-vir_meta$Date <- as.Date(vir_meta$Date)
-vir_meta$Day <- format(as.Date(vir_meta$Date, format="%Y-%m-%d"), "%d")
-vir_meta$month.numeric <- format(as.Date(vir_meta$Date, format="%Y-%m-%d"), "%m")
-vir_meta$week <- lubridate::week(ymd(vir_meta$Date))
-str(vir_meta)
+# source("scripts/metadata.R")
+# head(metadata, n=2)
+# metadata$Years <- as.factor(metadata$Years)
+# metadata$Date <- as.Date(metadata$Date)
+# metadata$Day <- format(as.Date(metadata$Date, format="%Y-%m-%d"), "%d")
+# metadata$month.numeric <- format(as.Date(metadata$Date, format="%Y-%m-%d"), "%m")
+# metadata$week <- lubridate::week(ymd(metadata$Date))
+# str(metadata)
+
+metadata <- read.csv('data/PBIN_metadata - METAFINAL.csv')
 
 #order meta by date
-vir_meta <- vir_meta[order(vir_meta$Date),]
+metadata <- metadata[order(metadata$Date),]
 
-#get basic vir_meta data info for methods section of report
-#check to make sure ASV data and vir_metaa dates are the same
-if (length(ASV_count) == nrow(vir_meta)){
-  print("ASV and vir_meta have same sampling date lengths -- GREAT")
-  } else {
-    print("ASV and vir_metaa have different sampling date lengths -- NOT GREAT")
-}
-
-
-(amt <- vir_meta %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
+#get basic metadata data info for methods section of report
+(amt <- metadata %>% group_by(Years) %>% summarise(amount=length(Years))) #view how many samples per year
 min(amt[,2])
 max(amt[,2])
 median(as.numeric(unlist(amt[,2]))) #get median samples per year
-vir_meta %>% group_by(Site) %>% summarise(amount=length(Site))
+metadata %>% group_by(Site) %>% summarise(amount=length(Site))
 
-# #ensure same samples between ASV_count and meta
-# names(ASV_count) %in% rownames(vir_meta)
-# #find which one is not the same
-# which(!names(ASV_count) %in% rownames(vir_meta))
-# names(ASV_count[100])
+
+#check to make sure ASV data and metadataa dates are the same
+if (length(ASV_count) == nrow(metadata)){
+  print("ASV and metadata have same sampling date lengths -- GREAT")
+} else {
+  print("ASV and metadataa have different sampling date lengths -- NOT GREAT")
+}
+
+# see what is not the same between ASV samples and metadata
+names(ASV_count) %in% metadata$sampleID
+#find which one is not the same
+names(ASV_count[which(!names(ASV_count) %in% metadata$sampleID)])
+
+## another way to do above:
+# metadata[!(metadata$sampleID %in% colnames(ASV_count)),] # all ASV samples in metadata
+# head(ASV_count[,!(colnames(ASV_count) %in% metadata$sampleID)]) # FLD0235_02_06_2007 FLD0247_08_09_2008_3d FLD0295_15_05_2011_2 missing from metadata
+
 
 #fix error above (commented out)
-rownames(vir_meta)[rownames(vir_meta) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
-vir_meta$description[rownames(vir_meta) == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
+rownames(metadata)[rownames(metadata) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
+metadata$description[rownames(metadata) == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
 
-# asv_count <- ASV_count[,(colnames(ASV_count) %in% rownames(vir_meta))]
+# asv_count <- ASV_count[,(colnames(ASV_count) %in% rownames(metadata))]
 # length(asv_count)
-# nrow(vir_meta)
+# nrow(metadata)
 
 asv_count <- ASV_count
 
@@ -76,7 +82,7 @@ library(phyloseq)
 library(microbiome)
 #VIRAL
 
-#add ASV count table, vir_metaa, virTree to phyloseq table
+#add ASV count table, metadataa, virTree to phyloseq table
 nrow(asv_count)
 nozero <- asv_count[rownames(asv_count) %in% names(rowSums(asv_count > 0)),] #only keep ASVs that are present in data
 nrow(nozero)
@@ -84,7 +90,7 @@ length(rowSums(asv_count > 0)) == nrow(asv_count)
 
 count_phy <- otu_table(asv_count, taxa_are_rows=T)
 dim(count_phy)
-sample_info <- sample_data(vir_meta)
+sample_info <- sample_data(metadata)
 dim(sample_info)
 #virTree <- read_tree("data/viral_tree")
 
