@@ -5,19 +5,19 @@ library(lubridate)
 library(naniar)
 
 #upload weather data
-weather_2006 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
-weather_2007 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
-weather_2008 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
-weather_2009 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
-weather_2010 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
-weather_2011 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
-weather_2012 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
-weather_2013 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
-weather_2014 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
-weather_2015 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
-weather_2016 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
-weather_2017 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
-weather_2018 <- read.csv("data/raw data/fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
+weather_2006 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
+weather_2007 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
+weather_2008 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
+weather_2009 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
+weather_2010 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
+weather_2011 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
+weather_2012 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
+weather_2013 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
+weather_2014 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
+weather_2015 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
+weather_2016 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
+weather_2017 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
+weather_2018 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
 
 #merge all weather dataframes
 weather <- Reduce(function(x,y) merge(x, y, all=TRUE), list(weather_2006, weather_2007, weather_2008,
@@ -152,28 +152,65 @@ viral_meta$Period <- getSeason(viral_meta$Date)
 
 head(viral_meta)
 
-viral_env_data <- read.table('data/raw data/File_S1_Environmental_Table.txt')
-colnames(viral_env_data) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+
+
+
+
+
+# import data
+ismej <- read.table('data/raw data/enviro_meta/File_S1_Environmental_Table.txt')
+colnames(ismej) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                         'Dissolved.N', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
-head(viral_env_data)
-viral_env_data_filtered <- viral_env_data[colnames(viral_env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+head(ismej)
+ismej_keep <- ismej[colnames(ismej) %in% c('SampleID', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                                                         'Dissolved.N', 'Microcystin', 'Description')]
 
+head(ismej_keep)
+
+# import data
+head(meta_cmd <- read.csv('data/raw data/enviro_meta/meta_cmd.csv', header=T))
+
+# import data
+meta_map_bloom <- read.table('data/raw data/enviro_meta/mapping_bloom2_new_corrected.txt', header=F, sep = '\t')
+colnames(meta_map_bloom) <- c('Description', 'Month', 'Year', 'Site', 'Period', 'Bloom', 'Tot.P_ug', 'P_range', 'N_range', 'Tot.N_mg', "Temp.water", 'Dissolved_P', 'Dissolved_N',
+                              'cum_precip', 'profondeur_secchi_cm', 'mean_temp', 'microcystin_ug_L', 'description', 'SampleID', 'delete')
+meta_map_bloom <- meta_map_bloom[4:19]
+# fix sampleID to description
+meta_map_bloom$SampleID <- as.character(meta_map_bloom$SampleID) #make string
+meta_map_bloom$SampleID <- gsub("-", "_", meta_map_bloom$SampleID) #change to underscore
+meta_map_bloom$SampleID <- gsub("[.]", "_", meta_map_bloom$SampleID) #change to underscore need [.] or else it changes everything
+meta_map_bloom$description <- sub("*._*._*._*._*._*._*._","",  meta_map_bloom$SampleID) #remove sample ID at beginning
+meta_map_bloom$description <- gsub("_", ".", meta_map_bloom$description) #replace _ with .
+head(meta_map_bloom)
+
+
+
+nrow(ismej_keep)
+head(meta_map_bloom)
+nrow(meta_cmd)
+
+temp <- merge(ismej_keep, meta_map_bloom, by='Description', all=T)
+temp2 <- merge(temp, meta_cmd, by= 'description', all=T)
+
+tail(temp)
+tail(temp2)
+
+write.csv(temp2, 'meta_temp.csv')
 
 #explore the data
 #make sure meta matches new meta samples
 nrow(viral_meta)
-nrow(viral_env_data_filtered)
+nrow(ismej_keep)
 
-# viral_env_data_filtered[which(viral_env_data_filtered$Description %in% viral_meta$description), ] #see the rows from viral_env_data_filtered that are in viral_meta
-# intersect(viral_env_data_filtered$Description, viral_meta$description) #which ones are the same
-# length(setdiff(viral_env_data_filtered$Description, viral_meta$description)) ##count how many are different
-# sum(!is.na(viral_env_data_filtered$Microcystin)) #how many non NA values in Microcystin
+# ismej_keep[which(ismej_keep$Description %in% viral_meta$description), ] #see the rows from ismej_keep that are in viral_meta
+# intersect(ismej_keep$Description, viral_meta$description) #which ones are the same
+# length(setdiff(ismej_keep$Description, viral_meta$description)) ##count how many are different
+# sum(!is.na(ismej_keep$Microcystin)) #how many non NA values in Microcystin
 
 
 # compare metadata tables to see which information is accurate
 weather_2006[which(weather_2006$Date == '2006-06-13'),] #ground truth weather information from specific date
-viral_env_data[which(viral_env_data$SampleID == '13.06.2006.1c'), ]
+ismej[which(ismej$SampleID == '13.06.2006.1c'), ]
 meta[which(meta$Date == '2006-06-13'),]
 get_date_range('2006-06-13') #7 days leading up to date of interest
 
@@ -184,14 +221,25 @@ nrow(viral_meta)
 nrow(meta)
 meta_all <- merge(viral_meta, meta, by = 'Date', all.x=T)
 nrow(meta_all)
-nrow(viral_env_data_filtered)
-meta_all <- merge(meta_all, viral_env_data_filtered, by.x = 'description', by.y = 'Description', all.x=T)
-nrow(meta_all)
+nrow(ismej_keep)
+metadata_final <- merge(meta_all, ismej_keep, by.x = 'description', by.y = 'Description', all.x=T)
+nrow(metadata_final)
 
-#clean up meta_all df
-row.names(meta_all) <- meta_all$sampleID
-vir_meta <- meta_all[, !colnames(meta_all) == 'sampleID']
+#clean up metadata_final df
+row.names(metadata_final) <- metadata_final$sampleID
+vir_meta <- metadata_final[, !colnames(metadata_final) == 'sampleID']
 
 head(vir_meta)
-#write.csv(meta_all, 'data/metadata.csv')
+#write.csv(metadata_final, 'data/metadata.csv')
+
+#import ISMEJ metadata
+ismej <- read.csv('data/ISMEJ_2017_metadata.csv', header=T)
+# head(ismej)
+# 
+# ismej <- ismej %>%
+#   select(c("X.SampleID", "Site"))
+# 
+# viral_metadata <- merge(vir_meta, ismej, by.x='description', by.y='X.SampleID', all.x=T)
+# viral_metadata %>% select(c("Site.x", "Site.y"))
+viral_env_data == ismej # they are the same
 
