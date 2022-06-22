@@ -58,6 +58,7 @@ FG.ig.vir <- adj2igraph(Matrix::drop0(getRefit(vir.spie2)),
 #plot_network(FG.ig, list(virps_filt, cyanops_filt))
 
 vir.corr.tab <- igraph::as_data_frame(FG.ig.vir, what="edges")
+write.csv(vir.corr.tab, 'filtered_vir-vir_correlation.csv')
 
 #plot vircyn connections with weights only
 virplot <- graph_from_data_frame(vir.corr.tab, directed = TRUE, vertices = NULL)
@@ -150,7 +151,7 @@ vircyn <- covar.vir.cyn %>%
   filter(across(to, ~ !grepl('vir_', .))) %>%
   filter(across(from, ~grepl('vir_', .))) 
 head(vircyn)
-write.csv(vircyn, "vircyan.cov.csv")
+write.csv(vircyn, "filtered_viral-cyano_correlation.csv")
 
 #plot vircyn connections with weights only
 vircyan.plot <- graph_from_data_frame(vircyn, directed = TRUE, vertices = NULL)
@@ -340,7 +341,7 @@ BnoC <- covar.vir.bactnoCyan %>%
   filter(across(to, ~ !grepl('vir_', .))) %>%
   filter(across(from, ~grepl('vir_', .)))
 head(BnoC)
-write.csv(BnoC, "virbactnoCyan.cov.csv")
+write.csv(BnoC, "filtered_virbactnoCyan_correlation.csv")
 
 #plot vircyn connections with weights only
 virbactnocyan.plot <- graph_from_data_frame(BnoC, directed = TRUE, vertices = NULL)
@@ -438,7 +439,7 @@ node_name <- unique(links$from)
 
 not_node_indices <- which(E(vdm.plot)$start != node_name) 
 not_joined_edges <- E(vdm.plot)[not_node_indices] 
-n <-delete_edges(vdm.pos.plot, not_joined_edges) 
+n <- delete_edges(vdm.pos.plot, not_joined_edges) 
 
 
 n1 <- make_ego_graph(vdm.pos.plot, order=1, nodes=node_name)
