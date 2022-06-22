@@ -161,8 +161,13 @@ head(viral_meta)
 ismej <- read.table('data/raw data/enviro_meta/File_S1_Environmental_Table.txt')
 colnames(ismej) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                         'Dissolved.N', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
+<<<<<<< HEAD
 head(ismej)
 ismej_keep <- ismej[colnames(ismej) %in% c('SampleID', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+=======
+head(viral_env_data)
+viral_env_data_keep <- viral_env_data[colnames(viral_env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
+>>>>>>> d3287cd (show missing metadata site info)
                                                         'Dissolved.N', 'Microcystin', 'Description')]
 
 head(ismej_keep)
@@ -200,12 +205,21 @@ write.csv(temp2, 'meta_temp.csv')
 #explore the data
 #make sure meta matches new meta samples
 nrow(viral_meta)
+<<<<<<< HEAD
 nrow(ismej_keep)
 
 # ismej_keep[which(ismej_keep$Description %in% viral_meta$description), ] #see the rows from ismej_keep that are in viral_meta
 # intersect(ismej_keep$Description, viral_meta$description) #which ones are the same
 # length(setdiff(ismej_keep$Description, viral_meta$description)) ##count how many are different
 # sum(!is.na(ismej_keep$Microcystin)) #how many non NA values in Microcystin
+=======
+nrow(viral_env_data_keep)
+
+# viral_env_data_keep[which(viral_env_data_keep$Description %in% viral_meta$description), ] #see the rows from viral_env_data_keep that are in viral_meta
+# intersect(viral_env_data_keep$Description, viral_meta$description) #which ones are the same
+# length(setdiff(viral_env_data_keep$Description, viral_meta$description)) ##count how many are different
+# sum(!is.na(viral_env_data_keep$Microcystin)) #how many non NA values in Microcystin
+>>>>>>> d3287cd (show missing metadata site info)
 
 
 # compare metadata tables to see which information is accurate
@@ -221,8 +235,13 @@ nrow(viral_meta)
 nrow(meta)
 meta_all <- merge(viral_meta, meta, by = 'Date', all.x=T)
 nrow(meta_all)
+<<<<<<< HEAD
 nrow(ismej_keep)
 metadata_final <- merge(meta_all, ismej_keep, by.x = 'description', by.y = 'Description', all.x=T)
+=======
+nrow(viral_env_data_keep)
+metadata_final <- merge(meta_all, viral_env_data_keep, by.x = 'description', by.y = 'Description', all.x=T)
+>>>>>>> d3287cd (show missing metadata site info)
 nrow(metadata_final)
 
 #clean up metadata_final df
