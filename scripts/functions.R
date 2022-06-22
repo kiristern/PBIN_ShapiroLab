@@ -32,7 +32,7 @@ getMonthDay <- function(table){
   return(md)
 }
 
-#plot relative abundance
+#plot relative abundance ### X-axis by season not date.
 plotRelAb <- function(rel_ab_tab, md, plotTitle){
   rel_ab_plot <- rel_ab_tab %>% 
     ggplot(aes(x =Sample, y = Abundance, fill = species, order = -species)) +
