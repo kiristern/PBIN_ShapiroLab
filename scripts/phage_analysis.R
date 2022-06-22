@@ -7,7 +7,7 @@ source("scripts/1_preprocess.R")
 
 
 ## sequences per sample
-sums_Phy <- data.frame(colSums(otu_table(virps3000filt)))
+sums_Phy <- data.frame(colSums(otu_table(viral_physeq)))
 colnames(sums_Phy) <- "Sample_TotalSeqs"
 sums_Phy$sample <- row.names(sums_Phy)
 sums_Phy <- arrange(sums_Phy, Sample_TotalSeqs)
@@ -17,6 +17,7 @@ ggplot(sums_Phy, aes(x=reorder(sample, Sample_TotalSeqs), y = Sample_TotalSeqs))
   ggtitle("Total Number of Sequences per Sample") +  #scale_y_continuous(breaks =seq(0, 1000000, 10000))+
   theme(axis.text.x = element_text(colour = "black", size=6, angle=45, hjust = 1, vjust = 1))
 
+sums_Phy_filt <- sums_Phy %>% filter(Sample_TotalSeqs < 3000)
 
 #check data
 print(virps3000filt)
@@ -324,9 +325,9 @@ citation("vegan")
 virps3000filt %>% sample_data() %>% head
 jsd <- sqrt(phyloseq::distance(virps3000filt, method = "jsd")) #jsd is more robust to sampling depth
 sampledf <- data.frame(sample_data(virps3000filt)) #make a df from the sample_data
-adonis(jsd ~ Period + Years + Months + Site, data = sampledf)
+adonis(jsd ~ Period + Years + Month + Site, data = sampledf)
 adonis(jsd ~ Site, data = sampledf)
-adonis(jsd ~ Months, data = sampledf)
+adonis(jsd ~ Month, data = sampledf)
 
 #homogeneity of dispersion test
 betadisp <- betadisper(jsd, sampledf$Period)
