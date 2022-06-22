@@ -9,6 +9,8 @@ library(stringr)
 library(vegan)
 library(lubridate)
 
+##### GET raw data #####
+
 
 #### UPLOAD DATA ####
 #upload viral ASV count table and vir_metaa
@@ -39,7 +41,7 @@ vir_meta <- vir_meta[order(vir_meta$Date),]
 #get basic vir_meta data info for methods section of report
 #check to make sure ASV data and vir_metaa dates are the same
 if (length(ASV_count) == nrow(vir_meta)){
-  print("ASV and vir_metaa have same sampling date lengths -- GREAT")
+  print("ASV and vir_meta have same sampling date lengths -- GREAT")
   } else {
     print("ASV and vir_metaa have different sampling date lengths -- NOT GREAT")
 }
@@ -137,6 +139,7 @@ source("scripts/bacteria_analysis.R")
 
 bact_physeq %>% sample_data() %>% head()
 head(virbact_meta)
+meta_all <- metadata
 dim(meta_all)
 #write.csv(virbact_meta, "~/Desktop/meta_w_dolimicroSums.csv")
 
