@@ -171,6 +171,26 @@ virbact_meta$micro.helli.sum <- micro_ps_helli %>% otu_table() %>% colSums()
 virbact_meta$doli.helli.sum <- doli_ps_helli %>% otu_table() %>% colSums()
 virbact_meta$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
 
+# write.csv(virbact_meta, 'bactmeta.csv')
+
+
+
+###### ADD BACTERIAL META INFO INTO META TABLE #####
+meta_virbact_FINAL <- metadata
+meta_virbact_FINAL <- merge(metadata, virbact_meta[c('description', 'Day', 'month.numeric', 'week', 'micro.sum', 'doli.sum', 'cyano.sum',
+                                                     'micro.relab.sum', 'doli.relab.sum', 'cyano.relab.sum', 'micro.helli.sum',
+                                                     'doli.helli.sum', 'cyano.helli.sum')], 
+                            # by.x = c('description', 'Date', 'Years', 'Month',' Period', 'Mean_temp_t0_t7', 
+                            #          'Cumul_precip_t1_t7_mm','Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', 'Dissolved.P',
+                            #           'Dissolved.N', 'Microcystin','P_range', 'N_range','Temp.water', 
+                            #          'profondeur_secchi_cm', 'microcystin_ug_L'),
+                            # by.y=c('description', 'Date', 'Years', 'Month', 'Period',
+                            #        'Mean_temp_t0_t7', 'Cumul_precip_t1_t7_mm', 'Site', 'Bloom', 'Tot.P_ug',
+                            #        'Tot.N_mg', 'Dissolved.P', 'Dissolved.N', 'Microcystin', 'P_range', 'N_range',
+                            #        'Temp.water', 'profondeur_secchi_cm', 'microcystin_ug_L'), 
+                            by='description',
+                            all.x=T)
+write.csv(meta_virbact_FINAL, 'METAFINAL.csv')
 # virbact_meta$micro.clr.sum <- micro_ps_clr %>% otu_table() %>% colSums()
 # virbact_meta$doli.clr.sum <- doli_ps_clr %>% otu_table() %>% colSums()
 # virbact_meta$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
