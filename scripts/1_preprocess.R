@@ -8,6 +8,7 @@ library(tidyverse)
 library(stringr)
 library(vegan)
 library(lubridate)
+source("scripts/functions.R")
 
 ##### GET raw data #####
 
@@ -66,14 +67,12 @@ names(ASV_count[which(!names(ASV_count) %in% metadata$sampleID)])
 
 
 #fix error above (commented out)
-rownames(metadata)[rownames(metadata) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
-metadata$description[rownames(metadata) == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
+# rownames(metadata)[rownames(metadata) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
+metadata$description[metadata$sampleID == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
 
-# asv_count <- ASV_count[,(colnames(ASV_count) %in% rownames(metadata))]
-# length(asv_count)
-# nrow(metadata)
-
-asv_count <- ASV_count
+asv_count <- ASV_count[,(colnames(ASV_count) %in% metadata$sampleID)]
+length(asv_count)
+nrow(metadata)
 
 
 
@@ -90,6 +89,7 @@ length(rowSums(asv_count > 0)) == nrow(asv_count)
 
 count_phy <- otu_table(asv_count, taxa_are_rows=T)
 dim(count_phy)
+rownames(metadata) <- metadata$sampleID
 sample_info <- sample_data(metadata)
 dim(sample_info)
 #virTree <- read_tree("data/viral_tree")
@@ -105,15 +105,23 @@ dim(mock_taxa)
 viral_physeq <- phyloseq(count_phy, sample_info, mock_taxa) #, virTree) 
 viral_physeq %>% otu_table( ) %>% dim
 
+vp <- viral_physeq %>% otu_table( )
+write.csv(vp, "data/raw data/viral_phyloseq.csv")
+
 print("it appears the viral phylogenetic tree removes some ASVs. Consider removing virTree from ps object")
 
 # rm reads fewer than 3000 -- filtering samples
 virps3000 <- prune_samples(sample_sums(viral_physeq)>=3000, viral_physeq)
-virps3000
+
+vp3000 <- virps3000 %>% otu_table()
+write.csv(vp3000, 'data/raw data/viral_physeq_3000.csv')
 
 # filter taxa not seen more than once in 10% of samples -- filtering taxa
 virps3000filt <- filter_taxa(virps3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
-virps3000filt
+
+vpfilt3000 <- virps3000filt %>% otu_table()
+write.csv(vpfilt3000, 'data/raw data/viral_physeq_filt3000.csv')
+
 
 virfiltotu <- virps3000filt %>% otu_table()
 #write.csv(virfiltotu, "viralCounts_filtered.csv")
@@ -180,7 +188,12 @@ otu_table(bact_physeq) <- otu_table(bact_physeq)[,toorder]
 otu_table(cyano_ps) <- otu_table(cyano_ps)[,toorder]
 
 bactnoCyan <- subset_taxa(bact_physeq, !Phylum == "p__Cyanobacteria")
+bnoC <- bactnoCyan %>% otu_table()
+write.csv(bnoC, 'data/raw data/bact_count_noCyano.csv')
+
 bactnoCyan_filt <- filter_taxa(bactnoCyan, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
+bnoC_filt <- bactnoCyan_filt %>% otu_table()
+write.csv(bnoC_filt, 'data/raw data/bact_count_noCyanofilt.csv')
 
 virps_filt <- filter_taxa(virps3000_samemeta, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 

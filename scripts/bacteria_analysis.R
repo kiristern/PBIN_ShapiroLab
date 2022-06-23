@@ -19,7 +19,7 @@ bact_meta$Date <- sub('^([^.]+.[^.]+.[^.]+).*', '\\1', bact_meta$sampleID) #keep
 bact_meta$Date <- as.Date(format(dmy(bact_meta$Date), '%Y-%m-%d'))
 
 #format dates
-bact_meta$Month <- format_month(bact_meta)
+bact_meta$Month <- lubridate::month(ymd(bact_meta$Date), label=T)
 bact_meta$Years <- format(as.Date(bact_meta$Date, format='%Y-%m-%d'), "%Y") #get year
 
 bact_meta$Period <- getSeason(bact_meta$Date)
@@ -40,7 +40,7 @@ head(bact_meta)
 
 #### Match bacteria metadata dimensions to viral metadata dimensions ####
 #match sample dates
-virbact_meta <- vir_meta
+virbact_meta <- metadata
 
 #make sure meta matches cyano samples
 nrow(virbact_meta)
@@ -55,9 +55,12 @@ length(bact_counts)
 # bact_counts <- bact_relab_otu
 # go to line 63
 
+#find which one is not the same
+names(bact_counts[which(!colnames(bact_counts) %in% metadata$description)])
+
 #select cols that match dates
-# bact_counts <- bact_counts[,( virbact_meta$description %in% colnames(bact_counts))]
-# length(bact_counts)
+bact_counts <- bact_counts[,( virbact_meta$description %in% colnames(bact_counts))]
+length(bact_counts)
 
 virbact_meta <- virbact_meta[virbact_meta$description %in% colnames(bact_counts),]
 nrow(virbact_meta)
@@ -108,18 +111,22 @@ all(colnames(bact_counts) %in% rownames(virbact_meta))
 map <- virbact_meta[order(virbact_meta$Date),]
 toorder <- rownames(map)
 otu_table(bact_physeq) <- otu_table(bact_physeq)[,toorder]
-bact_physeq %>% otu_table()
 
+bp <- bact_physeq %>% otu_table()
+write.csv(bp, 'data/raw data/bact_phyloseq.csv')
 
 # rm reads less than 3000
 bact3000 <- prune_samples(sample_sums(bact_physeq)>=3000, bact_physeq)
 print("doesn't appear to have removed anything. Try with a greater filter?")
 
+bp3000 <- bact3000 %>% otu_table()
+write.csv(bp3000, 'data/raw data/bact3000.csv')
+
 # filter taxa not seen more than once in 10% of samples
 bact3000filt <- filter_taxa(bact3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 bactfiltotu <- bact3000filt %>% otu_table()
-#write.csv(bactfiltotu, "bacteriaCounts_filtered.csv")
+write.csv(bactfiltotu, "data/raw data/bact3000filt.csv")
 
 
 bactotutab <- bact_physeq %>% otu_table()
@@ -171,7 +178,7 @@ virbact_meta$micro.helli.sum <- micro_ps_helli %>% otu_table() %>% colSums()
 virbact_meta$doli.helli.sum <- doli_ps_helli %>% otu_table() %>% colSums()
 virbact_meta$cyano.helli.sum <- cyano_ps_helli %>% otu_table() %>% colSums()
 
-# write.csv(virbact_meta, 'bactmeta.csv')
+write.csv(virbact_meta, 'data/raw data/bactmeta.csv')
 
 
 
@@ -190,7 +197,7 @@ meta_virbact_FINAL <- merge(metadata, virbact_meta[c('description', 'Day', 'mont
                             #        'Temp.water', 'profondeur_secchi_cm', 'microcystin_ug_L'), 
                             by='description',
                             all.x=T)
-write.csv(meta_virbact_FINAL, 'METAFINAL.csv')
+write.csv(meta_virbact_FINAL, 'data/raw data/meta_w_bact-abund.csv')
 # virbact_meta$micro.clr.sum <- micro_ps_clr %>% otu_table() %>% colSums()
 # virbact_meta$doli.clr.sum <- doli_ps_clr %>% otu_table() %>% colSums()
 # virbact_meta$cyano.clr.sum <- cyano_ps_clr %>% otu_table() %>% colSums()
@@ -206,6 +213,6 @@ colnames(tax_table(bact_physeq)) <- c("Kingdom", "Phylum", "Class",
 
 bact_physeq %>% sample_data() %>% head()
 
-#write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
+ #write.csv(bactfilt_relab_otu, "bactfilt_clr.csv")
 
 

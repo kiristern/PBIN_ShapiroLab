@@ -5,49 +5,49 @@ library(lubridate)
 library(naniar)
 source("scripts/functions.R")
 
-#upload weather data
-weather_2006 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
-weather_2007 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
-weather_2008 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
-weather_2009 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
-weather_2010 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
-weather_2011 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
-weather_2012 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
-weather_2013 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
-weather_2014 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
-weather_2015 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
-weather_2016 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
-weather_2017 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
-weather_2018 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
+# #upload weather data
+# weather_2006 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
+# weather_2007 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2007_P1D.csv")
+# weather_2008 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2008_P1D.csv")
+# weather_2009 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2009_P1D.csv")
+# weather_2010 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2010_P1D.csv")
+# weather_2011 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2011_P1D.csv")
+# weather_2012 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2012_P1D.csv")
+# weather_2013 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2013_P1D.csv")
+# weather_2014 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2014_P1D.csv")
+# weather_2015 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2015_P1D.csv")
+# weather_2016 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2016_P1D.csv")
+# weather_2017 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2017_P1D.csv")
+# weather_2018 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2018_P1D.csv")
+# 
+# #merge all weather dataframes
+# weather <- Reduce(function(x,y) merge(x, y, all=TRUE), list(weather_2006, weather_2007, weather_2008,
+#                                                             weather_2009, weather_2010, weather_2011,
+#                                                             weather_2012, weather_2013, weather_2014,
+#                                                             weather_2015, weather_2016, weather_2017,
+#                                                             weather_2018))
+# #replace missing values with NA
+# weather <-replace_na(weather)
+# 
+# #format as.Date
+# weather$Date.Heure <- as.Date(weather$Date.Heure)
+# 
+# #rename cols & keep only what is useful to me
+# #weather <- weather %>% rename(Date = Date.Heure, Temp.moy = Temp.moy...C., Precip.tot = Précip..tot...mm.) %>%
+# #                        select(Date, Temp.moy, Precip.tot) 
+# names(weather)[names(weather) == 'Date.Heure'] <- "Date"
+# names(weather)[names(weather) == "Temp.moy...C."] <- 'Temp.moy'
+# names(weather)[names(weather) == "Précip..tot...mm."] <- 'Precip.tot'
+# weather <- weather[,c('Date', 'Temp.moy', 'Precip.tot')]
+# 
+# #convert commas to periods & keep values as.numeric
+# weather$Temp.moy <- as.numeric(gsub(",", ".", weather$Temp.moy))
+# 
+# weather$Precip.tot <- as.numeric(gsub(",", ".", weather$Precip.tot))
+# 
+# write.csv(weather, "data/raw data/weather.csv")
 
-#merge all weather dataframes
-weather <- Reduce(function(x,y) merge(x, y, all=TRUE), list(weather_2006, weather_2007, weather_2008,
-                                                            weather_2009, weather_2010, weather_2011,
-                                                            weather_2012, weather_2013, weather_2014,
-                                                            weather_2015, weather_2016, weather_2017,
-                                                            weather_2018))
-#replace missing values with NA
-weather <-replace_na(weather)
-
-#format as.Date
-weather$Date.Heure <- as.Date(weather$Date.Heure)
-
-#rename cols & keep only what is useful to me
-#weather <- weather %>% rename(Date = Date.Heure, Temp.moy = Temp.moy...C., Precip.tot = Précip..tot...mm.) %>%
-#                        select(Date, Temp.moy, Precip.tot) 
-names(weather)[names(weather) == 'Date.Heure'] <- "Date"
-names(weather)[names(weather) == "Temp.moy...C."] <- 'Temp.moy'
-names(weather)[names(weather) == "Précip..tot...mm."] <- 'Precip.tot'
-weather <- weather[,c('Date', 'Temp.moy', 'Precip.tot')]
-
-#convert commas to periods & keep values as.numeric
-weather$Temp.moy <- as.numeric(gsub(",", ".", weather$Temp.moy))
-
-weather$Precip.tot <- as.numeric(gsub(",", ".", weather$Precip.tot))
-
-write.csv(weather, "data/raw data/weather.csv")
-
-
+weater<-read.csv('data/raw data/weather.csv')
 
 
 #### import viral ASV table ####

@@ -1,6 +1,8 @@
 ### Functions ###
 library(lubridate)
 
+weather<-read.csv('data/raw data/weather.csv')
+
 ##### METADATA functions #####
 #create function to isolate date from the sampleID
 get_date <- function(samp){
