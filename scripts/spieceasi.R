@@ -227,6 +227,8 @@ vdm <- covar.vdm %>%
 
 vdm.plot <- graph_from_data_frame(vdm, directed = TRUE, vertices = NULL)
 
+write.csv(vdm, 'data/vir-cyano_correlation.csv')
+
 #get dtype for doli-micro
 library(stringr)
 which(as.data.frame(str_count(vdm$to, "micro_"))=="1", arr.ind=T) #see which positions micro_ are in in col 2 of df
