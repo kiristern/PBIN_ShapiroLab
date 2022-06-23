@@ -10,10 +10,6 @@ get_date <- function(samp){
   return(date)
 }
 
-dates <- get_date(colnames(samples))
-str(dates)
-(dates_unique <- unique(dates)) #remove duplicated dates
-
 
 #function to select range of t-7:t (7 days leading up to date of interest)
 get_date_range <- function(x){
