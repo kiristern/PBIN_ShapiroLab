@@ -53,6 +53,11 @@ write.csv(weather, "data/raw data/weather.csv")
 #### import viral ASV table ####
 samples <- read.table('data/ASVs_counts_copy.tsv', header = T, sep = '\t', row.names = 1)
 
+#get unique dates
+dates <- get_date(colnames(samples))
+str(dates)
+(dates_unique <- unique(dates)) #remove duplicated dates
+
 #get mean temp for each sample date
 # create new metadata 
 meta <- as.data.frame(dates_unique)
@@ -70,6 +75,8 @@ for (i in 1:length(meta$Date)){
 }
 
 head(meta)
+
+
 
 
 

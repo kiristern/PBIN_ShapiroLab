@@ -19,14 +19,14 @@ str(dates)
 get_date_range <- function(x){
   weather[weather$Date >= as.Date(x) - 7 & weather$Date <= as.Date(x),]
 }
-get_date_range(dates_unique[100]) #7 days leading up to and incl 2016-09-22
+# get_date_range(dates_unique[100]) #7 days leading up to and incl 2016-09-22
 
 #function to get mean temp of 7 days leading to date
 get_mean_temp <- function(x){
   y = get_date_range(x)
   return(mean(y$Temp.moy))
 }
-get_mean_temp(dates_unique[100])
+# get_mean_temp(dates_unique[100])
 
 #function to get cumulative precipitation from t-7:t
 get_cumul_prec <- function(x){
