@@ -1,6 +1,71 @@
 ### Functions ###
 library(lubridate)
 
+##### METADATA functions #####
+#create function to isolate date from the sampleID
+get_date <- function(samp){
+  date <- sub("*._*._*._*._*._*._*._","", samp) #remove sample ID at beginning
+  date <- sub('^([^_]+_[^_]+_[^_]+).*', '\\1', date) #keep only dates (rm everything after third _)
+  date <- as.Date(format(dmy(date), '%Y-%m-%d')) #format to date
+  return(date)
+}
+
+dates <- get_date(colnames(samples))
+str(dates)
+(dates_unique <- unique(dates)) #remove duplicated dates
+
+
+#function to select range of t-7:t (7 days leading up to date of interest)
+get_date_range <- function(x){
+  weather[weather$Date >= as.Date(x) - 7 & weather$Date <= as.Date(x),]
+}
+get_date_range(dates_unique[100]) #7 days leading up to and incl 2016-09-22
+
+#function to get mean temp of 7 days leading to date
+get_mean_temp <- function(x){
+  y = get_date_range(x)
+  return(mean(y$Temp.moy))
+}
+get_mean_temp(dates_unique[100])
+
+#function to get cumulative precipitation from t-7:t
+get_cumul_prec <- function(x){
+  y = get_date_range(x)
+  return(sum(y$Precip.tot))
+}
+
+format_month <- function(df){
+  df$Month <- format(as.Date(df$Date, format='%Y-%m-%d'), "%m") #get month
+  #change month from numeric to title
+  df$Month <- gsub("03", "March", df$Month)
+  df$Month <- gsub("04", "April",df$Month)
+  df$Month <- gsub("05", "May", df$Month)
+  df$Month <- gsub("06", "June", df$Month)
+  df$Month <- gsub("07", "July", df$Month)
+  df$Month <- gsub("08", "August", df$Month)
+  df$Month <- gsub("09", "September", df$Month)
+  df$Month <- gsub("10", "October", df$Month)
+}
+
+
+#assign season depending on date
+getSeason <- function(DATES) {
+  WS <- as.Date("15-12-2012", format = "%d-%m-%Y") # Winter Solstice
+  SE <- as.Date("15-3-2012",  format = "%d-%m-%Y") # Spring Equinox
+  SS <- as.Date("15-6-2012",  format = "%d-%m-%Y") # Summer Solstice
+  FE <- as.Date("15-9-2012",  format = "%d-%m-%Y") # Fall Equinox
+  
+  # Convert dates from any year to 2012 dates
+  d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+  
+  ifelse (d >= WS | d < SE, "Winter",
+          ifelse (d >= SE & d < SS, "Spring",
+                  ifelse (d >= SS & d < FE, "Summer", "Fall")))
+}
+
+
+
+
 ## set vir_hel to same format as bact_hel
 colsamp2date <- function(tab2format){
   colnames(tab2format) <- sub("*._*._*._*._*._*._*._","", colnames(tab2format))

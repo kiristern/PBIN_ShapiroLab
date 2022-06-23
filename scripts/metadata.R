@@ -3,6 +3,7 @@ library(tidyverse)
 library(tidyr)
 library(lubridate)
 library(naniar)
+source("scripts/functions.R")
 
 #upload weather data
 weather_2006 <- read.csv("data/raw data/enviro_meta/fr_climat_quotidiennes_QC_7022579_2006_P1D.csv")
@@ -44,47 +45,13 @@ weather$Temp.moy <- as.numeric(gsub(",", ".", weather$Temp.moy))
 
 weather$Precip.tot <- as.numeric(gsub(",", ".", weather$Precip.tot))
 
-# write.csv(weather, "weather.csv")
+write.csv(weather, "data/raw data/weather.csv")
 
 
 
 
 #### import viral ASV table ####
 samples <- read.table('data/ASVs_counts_copy.tsv', header = T, sep = '\t', row.names = 1)
-
-#create function to isolate date from the sampleID
-get_date <- function(samp){
-  date <- sub("*._*._*._*._*._*._*._","", samp) #remove sample ID at beginning
-  date <- sub('^([^_]+_[^_]+_[^_]+).*', '\\1', date) #keep only dates (rm everything after third _)
-  date <- as.Date(format(dmy(date), '%Y-%m-%d')) #format to date
-  return(date)
-}
-
-dates <- get_date(colnames(samples))
-str(dates)
-(dates_unique <- unique(dates)) #remove duplicated dates
-
-
-#function to select range of t-7:t (7 days leading up to date of interest)
-get_date_range <- function(x){
-  weather[weather$Date >= as.Date(x) - 7 & weather$Date <= as.Date(x),]
-}
-get_date_range(dates_unique[100]) #7 days leading up to and incl 2016-09-22
-
-#function to get mean temp of 7 days leading to date
-get_mean_temp <- function(x){
-  y = get_date_range(x)
-  return(mean(y$Temp.moy))
-}
-get_mean_temp(dates_unique[100])
-
-#function to get cumulative precipitation from t-7:t
-get_cumul_prec <- function(x){
-  y = get_date_range(x)
-  return(sum(y$Precip.tot))
-}
-get_cumul_prec(dates_unique[100])
-
 
 #get mean temp for each sample date
 # create new metadata 
@@ -117,35 +84,7 @@ viral_meta$description <- gsub("_", ".", viral_meta$description) #replace _ with
 
 viral_meta$Years <- format(as.Date(viral_meta$Date, format='%Y-%m-%d'), "%Y") #get year
 
-format_month <- function(df){
-  df$Month <- format(as.Date(df$Date, format='%Y-%m-%d'), "%m") #get month
-  #change month from numeric to title
-  df$Month <- gsub("03", "March", df$Month)
-  df$Month <- gsub("04", "April",df$Month)
-  df$Month <- gsub("05", "May", df$Month)
-  df$Month <- gsub("06", "June", df$Month)
-  df$Month <- gsub("07", "July", df$Month)
-  df$Month <- gsub("08", "August", df$Month)
-  df$Month <- gsub("09", "September", df$Month)
-  df$Month <- gsub("10", "October", df$Month)
-}
-
 viral_meta$Month <- format_month(viral_meta)
-
-#assign season depending on date
-getSeason <- function(DATES) {
-  WS <- as.Date("15-12-2012", format = "%d-%m-%Y") # Winter Solstice
-  SE <- as.Date("15-3-2012",  format = "%d-%m-%Y") # Spring Equinox
-  SS <- as.Date("15-6-2012",  format = "%d-%m-%Y") # Summer Solstice
-  FE <- as.Date("15-9-2012",  format = "%d-%m-%Y") # Fall Equinox
-  
-  # Convert dates from any year to 2012 dates
-  d <- as.Date(strftime(DATES, format="2012-%m-%d"))
-  
-  ifelse (d >= WS | d < SE, "Winter",
-          ifelse (d >= SE & d < SS, "Spring",
-                  ifelse (d >= SS & d < FE, "Summer", "Fall")))
-}
 
 #assign season depending on date
 viral_meta$Period <- getSeason(viral_meta$Date)
@@ -161,18 +100,14 @@ head(viral_meta)
 ismej <- read.table('data/raw data/enviro_meta/File_S1_Environmental_Table.txt')
 colnames(ismej) <- c('SampleID', 'Julian', 'Week', 'Month', 'Year', 'Site', 'Season', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
                         'Dissolved.N', 'Precipitation', 'Temperature', 'Microcystin', 'Description')
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 head(ismej)
-ismej_keep <- ismej[colnames(ismej) %in% c('SampleID', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
-=======
+ismej_keep <- ismej[colnames(ismej) %in% c('SampleID', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P")]
 head(viral_env_data)
-viral_env_data_keep <- viral_env_data[colnames(viral_env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
->>>>>>> d3287cd (show missing metadata site info)
-=======
+viral_env_data_keep <- viral_env_data[colnames(viral_env_data) %in% c('Julian', 'Week', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P")]
+
 head(ismej)
 ismej_keep <- ismej[colnames(ismej) %in% c('SampleID', 'Site', 'Bloom', 'Tot.P_ug', 'Tot.N_mg', "Dissolved.P",
->>>>>>> b9f9519 ((last saved in R env -- lost files on computer))
                                                         'Dissolved.N', 'Microcystin', 'Description')]
 
 head(ismej_keep)
@@ -210,30 +145,24 @@ write.csv(temp2, 'meta_temp.csv')
 #explore the data
 #make sure meta matches new meta samples
 nrow(viral_meta)
-<<<<<<< HEAD
-<<<<<<< HEAD
 nrow(ismej_keep)
 
 # ismej_keep[which(ismej_keep$Description %in% viral_meta$description), ] #see the rows from ismej_keep that are in viral_meta
 # intersect(ismej_keep$Description, viral_meta$description) #which ones are the same
 # length(setdiff(ismej_keep$Description, viral_meta$description)) ##count how many are different
 # sum(!is.na(ismej_keep$Microcystin)) #how many non NA values in Microcystin
-=======
 nrow(viral_env_data_keep)
 
 # viral_env_data_keep[which(viral_env_data_keep$Description %in% viral_meta$description), ] #see the rows from viral_env_data_keep that are in viral_meta
 # intersect(viral_env_data_keep$Description, viral_meta$description) #which ones are the same
 # length(setdiff(viral_env_data_keep$Description, viral_meta$description)) ##count how many are different
 # sum(!is.na(viral_env_data_keep$Microcystin)) #how many non NA values in Microcystin
->>>>>>> d3287cd (show missing metadata site info)
-=======
 nrow(ismej_keep)
 
 # ismej_keep[which(ismej_keep$Description %in% viral_meta$description), ] #see the rows from ismej_keep that are in viral_meta
 # intersect(ismej_keep$Description, viral_meta$description) #which ones are the same
 # length(setdiff(ismej_keep$Description, viral_meta$description)) ##count how many are different
 # sum(!is.na(ismej_keep$Microcystin)) #how many non NA values in Microcystin
->>>>>>> b9f9519 ((last saved in R env -- lost files on computer))
 
 
 # compare metadata tables to see which information is accurate
@@ -249,18 +178,15 @@ nrow(viral_meta)
 nrow(meta)
 meta_all <- merge(viral_meta, meta, by = 'Date', all.x=T)
 nrow(meta_all)
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 nrow(ismej_keep)
 metadata_final <- merge(meta_all, ismej_keep, by.x = 'description', by.y = 'Description', all.x=T)
-=======
+
 nrow(viral_env_data_keep)
 metadata_final <- merge(meta_all, viral_env_data_keep, by.x = 'description', by.y = 'Description', all.x=T)
->>>>>>> d3287cd (show missing metadata site info)
-=======
+
 nrow(ismej_keep)
 metadata_final <- merge(meta_all, ismej_keep, by.x = 'description', by.y = 'Description', all.x=T)
->>>>>>> b9f9519 ((last saved in R env -- lost files on computer))
 nrow(metadata_final)
 
 #clean up metadata_final df
@@ -280,4 +206,28 @@ ismej <- read.csv('data/ISMEJ_2017_metadata.csv', header=T)
 # viral_metadata <- merge(vir_meta, ismej, by.x='description', by.y='X.SampleID', all.x=T)
 # viral_metadata %>% select(c("Site.x", "Site.y"))
 viral_env_data == ismej # they are the same
+
+
+
+
+
+
+
+### Fix ###
+
+corrected <- read.csv('/Users/kiristern/Downloads/meta_cmd.csv')
+
+base <- read.csv('data/PBIN_metadata - METAFINAL.csv')
+env <- read.csv('data/raw data/enviro_meta/File_S1_Environmental_Table.txt', sep = '\t')
+meta3$sampleID
+meta3$sampleID <- gsub("-", "_", meta3$sampleID) #change to underscore
+meta3$sampleID <- gsub("[.]", "_", meta3$sampleID)
+
+
+env[which(!(env$description %in% base$description)),]
+
+
+base <- base %>% rows_update(corrected, by='sampleID', unmatched='ignore') #update all values with correct ones
+write.csv(base, 'data/PBIN_metadata - METAFINAL.csv')
+
 
