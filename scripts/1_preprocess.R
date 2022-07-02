@@ -65,10 +65,6 @@ names(ASV_count[which(!names(ASV_count) %in% metadata$sampleID)])
 # head(ASV_count[,!(colnames(ASV_count) %in% metadata$sampleID)]) # FLD0235_02_06_2007 FLD0247_08_09_2008_3d FLD0295_15_05_2011_2 missing from metadata
 
 
-#fix error above (commented out)
-# rownames(metadata)[rownames(metadata) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
-metadata$description[metadata$sampleID == 'FLD0295_15_05_2011_2'] <- '15.05.2011.2' #update description to proper date
-
 asv_count <- ASV_count[,(colnames(ASV_count) %in% metadata$sampleID)]
 length(asv_count)
 nrow(metadata)
