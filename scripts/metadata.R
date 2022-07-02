@@ -51,7 +51,8 @@ weater<-read.csv('data/raw data/weather.csv')
 
 
 #### import viral ASV table ####
-samples <- read.table('data/ASVs_counts_copy.tsv', header = T, sep = '\t', row.names = 1)
+samples <- read.table('data/ASVs_counts_UPDATED.tsv', header = T, sep = '\t', row.names = 1)
+colnames(samples) <- gsub("\\.", "_", colnames(samples)) # change _ to .
 
 #get unique dates
 dates <- get_date(colnames(samples))

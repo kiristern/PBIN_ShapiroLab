@@ -16,14 +16,13 @@ source("scripts/functions.R")
 #### UPLOAD DATA ####
 #upload viral ASV count table and metadataa
 ASV_count <- read.table("data/ASVs_counts_UPDATED.tsv", row.names = 1, header=T)
+colnames(ASV_count) <- gsub("\\.", "_", colnames(ASV_count)) 
 str(ASV_count)
 dim(ASV_count)
 range(ASV_count)
 apply(ASV_count, 2, median) #get median for each col
-median(unlist(ASV_count), na.rm = T) #et median for whole df
+median(unlist(ASV_count), na.rm = T) # get median for whole df
 summary(ASV_count)
-
-colnames(ASV_count)[colnames(ASV_count) == "FLD0295_15_05_2011_1"] <- "FLD0295_15_05_2011_2" #dates were duplicated therefore need to correct
 
 head(ASV_count, n=2)
 
