@@ -15,7 +15,7 @@ source("scripts/functions.R")
 
 #### UPLOAD DATA ####
 #upload viral ASV count table and metadataa
-ASV_count <- read.table("data/ASVs_counts_copy.tsv", row.names = 1, header=T)
+ASV_count <- read.table("data/ASVs_counts_UPDATED.tsv", row.names = 1, header=T)
 str(ASV_count)
 dim(ASV_count)
 range(ASV_count)
