@@ -1,7 +1,6 @@
 packageVersion("Phyloseq")
 citation("phyloseq")
 
-# git demo
 
 ##################################
 
