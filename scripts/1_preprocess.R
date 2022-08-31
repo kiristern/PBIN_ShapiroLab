@@ -3,7 +3,7 @@ citation("phyloseq")
 
 
 ##################################
-
+setwd("~/Desktop/phage/PBIN_ShapiroLab") 
 library(tidyverse)
 library(stringr)
 library(vegan)
@@ -101,7 +101,7 @@ viral_physeq <- phyloseq(count_phy, sample_info, mock_taxa) #, virTree)
 viral_physeq %>% otu_table( ) %>% dim
 
 vp <- viral_physeq %>% otu_table( )
-write.csv(vp, "data/raw data/viral_phyloseq.csv")
+write.csv(vp, "data/viral_phyloseq.csv")
 
 print("it appears the viral phylogenetic tree removes some ASVs. Consider removing virTree from ps object")
 
@@ -109,13 +109,13 @@ print("it appears the viral phylogenetic tree removes some ASVs. Consider removi
 virps3000 <- prune_samples(sample_sums(viral_physeq)>=3000, viral_physeq)
 
 vp3000 <- virps3000 %>% otu_table()
-write.csv(vp3000, 'data/raw data/viral_physeq_3000.csv')
+write.csv(vp3000, 'data/viral_physeq_3000.csv')
 
 # filter taxa not seen more than once in 10% of samples -- filtering taxa
 virps3000filt <- filter_taxa(virps3000, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
 vpfilt3000 <- virps3000filt %>% otu_table()
-write.csv(vpfilt3000, 'data/raw data/viral_physeq_filt3000.csv')
+write.csv(vpfilt3000, 'data/viral_physeq_filt3000.csv')
 
 
 virfiltotu <- virps3000filt %>% otu_table()
@@ -184,11 +184,11 @@ otu_table(cyano_ps) <- otu_table(cyano_ps)[,toorder]
 
 bactnoCyan <- subset_taxa(bact_physeq, !Phylum == "p__Cyanobacteria")
 bnoC <- bactnoCyan %>% otu_table()
-write.csv(bnoC, 'data/raw data/bact_count_noCyano.csv')
+write.csv(bnoC, 'data/bact_count_noCyano.csv')
 
 bactnoCyan_filt <- filter_taxa(bactnoCyan, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 bnoC_filt <- bactnoCyan_filt %>% otu_table()
-write.csv(bnoC_filt, 'data/raw data/bact_count_noCyanofilt.csv')
+write.csv(bnoC_filt, 'data/bact_count_noCyanofilt.csv')
 
 virps_filt <- filter_taxa(virps3000_samemeta, function(x) sum(x > 1) > (0.10*length(x)), TRUE)
 
@@ -199,7 +199,6 @@ cyano.ps_filt <- filter_taxa(cyano_ps, function(x) sum(x > 1) > (0.10*length(x))
 
 virps_filt %>% sample_data() %>% head()
 cyano.ps_filt 
-
 
 
 
