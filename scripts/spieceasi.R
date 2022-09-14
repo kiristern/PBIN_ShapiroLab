@@ -70,7 +70,7 @@ hist(virspiec.deg)
 range(virspiec.deg)
 
 library(ggplot2)
-library(ggnet)
+library(GGally)
 ggnet2(vir.corr.tab,
        alpha=0.75,
        #shape = factor(dtype),
@@ -167,7 +167,7 @@ hist(degree.cyan)
 range(degree.cyan)
 
 library(ggplot2)
-library(ggnet)
+library(GGally)
 ggnet2(vircyn,
        color = dtype.cyan, palette = c("Phage" = "#E1AF00", "Cyanobacteria" = "steelblue"), 
        alpha=0.75,
@@ -359,7 +359,7 @@ hist(degree.cyan)
 range(degree.cyan)
 
 library(ggplot2)
-library(ggnet)
+library(GGally)
 ggnet2(BnoC,
        color = dtype.cyan, palette = c("Phage" = "#E1AF00", "Bacteria" = "steelblue"), 
        alpha=0.75,
@@ -448,3 +448,4 @@ n1 <- make_ego_graph(vdm.pos.plot, order=1, nodes=node_name)
 n2 <- do.call(union, n1)
 
 subgraph(vdm.pos.plot, n2)
+

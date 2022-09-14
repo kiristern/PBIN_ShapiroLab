@@ -84,7 +84,9 @@ uniq.pel[! uniq.pel %in% uniq.lit]
 #### ALPHA DIV ####
 library(breakaway)
 
-ba.dates <- meta %>% dplyr::select(Date)
+##error here yet this object doesn't seems to be used in the code
+#change to from meta to metadata
+ba.dates <- metadata %>% dplyr::select(Date)
 
 vir_ps_lit 
 vir_ps_pel 
@@ -305,6 +307,7 @@ ggplot(data = viral_df, aes(x = depth, y = shannon)) +
   ggtitle("Shannon diversity by depth")
 
 
+
 ggplot(data = data.frame("total_reads" =  phyloseq::sample_sums(viral_physeq),
                          "Years" = viral_physeq %>% sample_data %>% get_variable("Years")),
        aes(x = total_reads, y = Years)) +
@@ -325,9 +328,9 @@ citation("vegan")
 virps3000filt %>% sample_data() %>% head
 jsd <- sqrt(phyloseq::distance(virps3000filt, method = "jsd")) #jsd is more robust to sampling depth
 sampledf <- data.frame(sample_data(virps3000filt)) #make a df from the sample_data
-adonis(jsd ~ Period + Years + Month + Site, data = sampledf)
-adonis(jsd ~ Site, data = sampledf)
-adonis(jsd ~ Month, data = sampledf)
+adonis2(jsd ~ Period + Years + Month + Site, data = sampledf)
+adonis2(jsd ~ Site, data = sampledf)
+adonis2(jsd ~ Month, data = sampledf)
 
 #homogeneity of dispersion test
 betadisp <- betadisper(jsd, sampledf$Period)
@@ -343,11 +346,13 @@ nmds=metaMDS(comm = sqrt(phyloseq::distance(virps3000filt, "jsd")), k=3, trymax 
 #                  trymax=500)
 plot_ordination(physeq = virps3000filt,
                 ordination = nmds,
-                color = "Years",
+                color = as.factor("Years"),
                 #shape = "Site",
-                title = "NMDS of Lake Champlain viral Communities")+
-  geom_point(aes(color=Years))+
+                title = "NMDS of Lake Champlain viral Communities") + 
+  geom_point(aes(color=as.factor(Years)))+
   scale_color_brewer(palette = "Paired")
+
+ 
  # geom_point(colour="grey90", size=1.5)
 nmds$stress #0.1432 good -- convergence. high stress value means that the algorithm had a hard time representing the distances between samples in 2 dimensions (anything <0.2 is considered acceptable)
 
@@ -366,8 +371,7 @@ nmds$stress #0.1432 good -- convergence. high stress value means that the algori
 #https://bioconductor.riken.jp/packages/3.8/bioc/vignettes/microbiome/inst/doc/vignette.html
 #Visually-Weighted Regression curve with smoothed error bars
 # Estimate Shannon diversity and add it to the phyloseq object
-sample_data(filt_virseq)$ShannonDiv <- 
-  metadata$ShannonDiv <- filt_virseq %>% otu_table %>% microbiome::alpha() %>% select("diversity_shannon")
+sample_data(virps3000filt)$ShannonDiv <- metadata$ShannonDiv <- virps3000filt %>% otu_table %>% microbiome::alpha() %>% select("diversity_shannon")
 
 #compare year and microbiome shannon diversity
 microbiome::plot_regression(ShannonDiv ~ Years, metadata) #doesn't work!
@@ -375,7 +379,7 @@ microbiome::plot_regression(ShannonDiv ~ Years, metadata) #doesn't work!
 
 #visualize the core microbiota (set of taxa that are detected in a remarkable fraction of the population above a give abundance threshold)
 library(ggplot2, quiet = TRUE)
-p <- plot_core(transform(filt_virseq, "compositional"), 
+p <- plot_core(transform(virps3000filt, "compositional"), 
                plot.type = "heatmap", 
                colours = gray(seq(0,1,length=5)),
                prevalences = seq(.05, 1, .05), 
