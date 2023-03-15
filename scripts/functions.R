@@ -116,6 +116,7 @@ plotRelAb <- function(rel_ab_tab, md, plotTitle){
   return(rel_ab_plot)
 }
 
+
 #breakaway richness plot
 plot.ba <- function(ps.obj, plot.title){
   ba <- breakaway(ps.obj)
@@ -132,15 +133,19 @@ plot.ba <- function(ps.obj, plot.title){
                          "Lower" = (ba %>% summary)$lower,
                          "sample"= ps.obj %>% sample_data %>% get_variable("description"))
   head(ba_vir_df)
+  ba.model<- 
   baPlot <- ggplot(ba_vir_df, aes(x = forcats::fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
     geom_point(size=3)+
+    theme_classic()+
     geom_errorbar(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper), width=0.05))+ 
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
           plot.title = element_text(hjust = 0.5))+ #center title
     ggtitle(plot.title)+
     scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
     scale_y_continuous(name="Richness")+
-    ylim(0, 650)
+    ylim(0, 650)+
+    geom_smooth(aes(x = as.numeric(forcats::fct_inorder(sample)), y=richness), method = "lm", formula = y~x)+
+    annotate("text",x=1,y=1,label=paste0(""))
   return(baPlot)
 }
 
@@ -166,11 +171,11 @@ box.years <- function(ps.obj, plotTitle){
   (ba_plot <-  ggplot(ba_year, aes(x = Years, y = ba_observed_richness))+
       geom_point()+
       geom_abline(intercept = coefs[1], slope = coefs[2])+
-      annotate(geom="text", x = 3.5, y=620, label= paste("Adj R2 = ", r2,
+      annotate(geom="text", x = 2010, y=620, label= paste("Adj R2 = ", r2,
                                                          "p-val = ", pval))+
       labs(title = plotTitle)+
-      stat_summary(fun.data="mean_sdl", fun.args = list(mult=1), 
-                   geom="crossbar", width=0.5)+ 
+      xlim(2005,2017)+
+      stat_summary(fun.data="mean_sdl", fun.args = list(mult=1), geom="crossbar", width=0.5)+
       theme_minimal())
   return(ba_plot)
 }
@@ -264,3 +269,4 @@ box.shannon <- function(ps.obj, env.var){
   shan.list <- list(shan_yn, shan_plot)
   return(shan.list)
 }
+

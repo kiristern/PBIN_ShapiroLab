@@ -18,6 +18,8 @@ SE_vir_dol_mic <- spiec.easi(list(virps_filt, doli.ps, micro.ps), method='mb', n
                                                                 seed = 1234,
                                                                 ncores=4))
 getStability(SE_vir_dol_mic)
+getOptMerge(SE_vir_dol_mic)
+SE_vir_dol_mic
 
 SE_vir_bactnoCyan <- spiec.easi(list(virps_filt, bactnoCyan_filt), method='mb', nlambda=100,
                                 lambda.min.ratio=1e-4, pulsar.params = list(thresh = 0.05,

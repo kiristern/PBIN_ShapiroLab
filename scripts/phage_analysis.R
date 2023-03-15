@@ -4,7 +4,7 @@ setwd("~/Documents/GitHub/PBIN_ShapiroLab")
 #import scripts
 source("scripts/functions.R")
 source("scripts/1_preprocess.R")
-
+library(ggpubr)
 
 ## sequences per sample
 sums_Phy <- data.frame(colSums(otu_table(viral_physeq)))
@@ -88,15 +88,49 @@ library(breakaway)
 #change to from meta to metadata
 ba.dates <- metadata %>% dplyr::select(Date)
 
-vir_ps_lit 
 vir_ps_pel 
+vir_ps_lit 
 
 #richness by year
+plot.ba <- function(ps.obj, plot.title){
+  ba <- breakaway(ps.obj)
+  ymd <- ps.obj %>% sample_data %>% get_variable("Date")
+  m <- month(ymd)
+  d <- day(ymd)
+  md <- paste( d, m, sep="-")
+  
+  ba_vir_df = data.frame("richness" = (ba %>% summary)$estimate,
+                         #"sample" = (ba %>% summary)$sample_names,
+                         "error" = (ba %>% summary)$error,
+                         "Years" = ps.obj %>% sample_data %>% get_variable("Years"),
+                         "Upper" = (ba %>% summary)$upper,
+                         "Lower" = (ba %>% summary)$lower,
+                         "sample"= ps.obj %>% sample_data %>% get_variable("description"))
+  head(ba_vir_df)
+  ba.model<- 
+    baPlot <- ggplot(ba_vir_df, aes(x = forcats::fct_inorder(sample), y = richness, color = Years))+ #fct_inorder ensures plotting in order of sample date
+    geom_point(size=3)+
+    theme_classic()+
+    geom_errorbar(aes(ymin=richness-abs(richness-Lower), ymax=richness+abs(richness-Upper), width=0.05))+ 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
+          plot.title = element_text(hjust = 0.5))+ #center title
+    ggtitle(plot.title)+
+    scale_x_discrete(labels = md, name="Sample date")+ #change x-axis sample name to Month-Day
+    scale_y_continuous(name="Richness")+
+    ylim(0, 650)+
+    geom_smooth(aes(x = as.numeric(forcats::fct_inorder(sample)), y=richness), method = "lm", formula = y~x)+
+    annotate("text",x=1,y=1,label=paste0(""))
+  return(baPlot)
+}
+
+
 ba.pel <- plot.ba(vir_ps_pel, "Breakaway richness of pelagic samples")
 ba.lit <- plot.ba(vir_ps_lit, "Breakaway richness of littoral samples")
 
+ba.pel
 ggpubr::ggarrange(ba.pel, ba.lit, ncol=2, nrow=1, common.legend = T, legend="bottom")
 
+##scatter.ba(vir_ps_pel)
 
 # richness by years
 ba_year_lit <- box.years(vir_ps_lit, "Observed richness by year (littoral)")
@@ -147,9 +181,9 @@ bloom.ftest <- var.test(ba_observed_richness ~ env.var, data=box.bloom.df)# p-va
 
 #t-test
 site.ttest <- t.test(ba_observed_richness ~ env.var, data=box.site.df, var.equal=T)
-site.ttest$p.value # 0.09212665 > 0.05; no signif differences b/w groups
+site.ttest$p.value # 0.0968814 > 0.05; no signif differences b/w groups
 bloom.ttest <- t.test(ba_observed_richness ~ env.var, data=box.bloom.df, var.equal=T)
-bloom.ttest$p.value #0.4781509 > 0.05; no signif difference b/w sites
+bloom.ttest$p.value # 0.506417 > 0.05; no signif difference b/w sites
 
 
 
@@ -182,7 +216,8 @@ ggplot(data = rich_depth,
     geom_abline(intercept = coefs[1], slope = coefs[2])+
     annotate(geom="text", x = 2e+04, y=700, size = 3,
              label= paste("Adj R2 = ", r2,
-                           "p-val = ", pval))
+                           "p-val = ", pval))+
+  theme_light()
 
 
 
@@ -194,9 +229,8 @@ ggplot(data = data.frame("total_reads" =  phyloseq::sample_sums(viral_physeq),
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 10), #rotate axis labels
         plot.title = element_text(hjust = 0.5))+ #center title
   ggtitle("Number of reads per Year")+
+  ylim(2005,2020)+
   coord_flip()
-
-
 
 
 
@@ -261,9 +295,9 @@ bloom.ftest <- var.test(Shannon ~ env.var, data=shan.bloom)# p-val = 0.4085
 
 #t-test
 site.ttest <- t.test(Shannon ~ env.var, data=shan.site, var.equal=T)
-site.ttest$p.value #  0.2216704 > 0.05; no signif differences b/w sites
+site.ttest$p.value #  0.2161447 > 0.05; no signif differences b/w sites
 bloom.ttest <- t.test(Shannon ~ env.var, data=shan.bloom, var.equal=T)
-bloom.ttest$p.value #0.7008102 > 0.05; no signif difference b/w groups
+bloom.ttest$p.value #0.6891384 > 0.05; no signif difference b/w groups
 
 
 
@@ -279,8 +313,8 @@ viral_df = data.frame("shannon" = shan$Shannon,
 head(viral_df)
 str(viral_df)
 ggplot(viral_df, aes(x = forcats::fct_inorder(sample), y = shannon, color = Years))+ #fct_inorder ensures plotting in order of sample date
-  geom_point()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5), #rotate axis labels
+  geom_point()+theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 3), #rotate axis labels
         plot.title = element_text(hjust = 0.5))+ #center title
   ggtitle("Shannon diversity by sample")+
   scale_x_discrete(labels = viral_physeq %>% sample_data %>% get_variable("Month"), name="Month")#change x-axis sample name to Month
@@ -299,6 +333,7 @@ summary(fit)
 
 ggplot(data = viral_df, aes(x = depth, y = shannon)) +
   geom_point() +
+  theme_light()+
   geom_smooth(method="lm") +
   labs(x = "\nTotal Reads", y = "Shannon\n")+
   geom_abline(intercept = fit$coefficients[1], slope =  fit$coefficients[2])+
