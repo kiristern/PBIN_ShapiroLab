@@ -85,6 +85,8 @@ psmelt_dplyr = function(physeq) {
 }
 vs_metadata <- viral_physeq %>% sample_data()
 
+vs_metadata <- viral_physeq %>% sample_data()
+
 tsdf.0.2 <- bl.phy %>% 
   psmelt_dplyr() %>% 
   mutate(decimaldat = decimal_date(as.Date(Date)))
