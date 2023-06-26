@@ -40,7 +40,22 @@ vir.spie2$select$stars$summary #if coming up with empty network: b/c max value o
 getStability(vir.spie2)
 sum(getRefit(vir.spie2))/2
 
-
+ 
+#try to filter according to edge value of getoptmerge
+#otu.ids=colnames(SE_viral_cyano$est$data)
+#otu.ids=colnames(spiec.out$est$data)
+#edges=E(spiec.graph)
+#filtered.edges=c()
+#for(e.index in 1:length(edges)){
+#  adj.nodes=ends(spiec.graph,edges[e.index])
+# xindex=which(otu.ids==adj.nodes[1])
+#  yindex=which(otu.ids==adj.nodes[2])
+#  beta=betaMat[xindex,yindex]
+#  if(beta<0){
+#    filtered.edges=c(filtered.edges,edges[e.index])
+#  }
+#}
+#spiec.graph.pos=delete_edges(spiec.graph, filtered.edges)
 
 
 
@@ -56,10 +71,31 @@ FG.ig.vir <- adj2igraph(Matrix::drop0(getRefit(vir.spie2)),
                         edge.attr=list(weight=weights2),
                         vertex.attr=list(name=taxa_names(virps_filt)))
 
+#Getting edge information
+
+bm3 <- symBeta(getOptMerge(vir.spie2), mode="maxabs")
+diag(bm3) <- 0
+edgePval <- Matrix::summary(t(bm3))[,3]
+FG.ig.vir_edge <- adj2igraph(Matrix::drop0(getRefit(vir.spie2)),
+                             edge.attr=list(edgeP=edgePval),
+                             vertex.attr=list(name=taxa_names(virps_filt)))
+
+
+# Assuming your igraph object is named g and edge attribute is 'score'
+E(FG.ig.vir_edge)$score <- as.numeric(E(FG.ig.vir_edge)$edgeP) # Convert scores to numeric if they are not
+
+# Get the indices of the edges with score less than 0.7
+edge_ids_to_remove <- E(FG.ig.vir_edge)[ E(FG.ig.vir_edge)$edgeP < 0.7 ]
+
+# Remove these edges from the graph
+FG.ig.vir_edge <- delete_edges(FG.ig.vir_edge, edge_ids_to_remove)
+
+
 #plot with weights
 #plot_network(FG.ig, list(virps_filt, cyanops_filt))
 
-vir.corr.tab <- igraph::as_data_frame(FG.ig.vir, what="edges")
+vir.corr.tab <- igraph::as_data_frame(FG.ig.vir_edge, what="edges")
+
 write.csv(vir.corr.tab, 'filtered_vir-vir_correlation.csv')
 
 #plot vircyn connections with weights only
@@ -83,6 +119,9 @@ ggnet2(vir.corr.tab,
        edge.size = abs(vir.corr.tab[,3]), edge.alpha = 0.5, edge.lty = ifelse(vir.corr.tab$weight > 0, 1, 2),
        label = colnames(vir.spie2$est$data), label.size = 1)+
   ggtitle("Viral correlation network")
+
+
+
 # guides(color=FALSE)
 
 
@@ -107,7 +146,6 @@ crossing(clusters.vir, virplot)
 which(crossing(clusters.vir, virplot) == T)
 length(which(crossing(clusters.vir, virplot) == T)) #number of cross community interactions
 
-
 #plot communities without shaded regions
 
 ggnet2(vir.corr.tab,
@@ -120,7 +158,6 @@ ggnet2(vir.corr.tab,
        label = colnames(vir.spie2$est$data), label.size = 1)+
   ggtitle("Viral correlation network by clusters")
 #guides(size=FALSE)
-
 
 
 
@@ -144,8 +181,30 @@ weights <- Matrix::summary(t(bm))[,3]
 FG.ig.vir.cyn <- adj2igraph(Matrix::drop0(getRefit(SE_viral_cyano)),
                             edge.attr=list(weight=weights),
                             vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(cyano.ps_filt))))
+#Getting edge information
 
-covar.vir.cyn <- igraph::as_data_frame(FG.ig.vir.cyn, what="edges")
+bm4 <- symBeta(getOptMerge(SE_viral_cyano), mode="maxabs")
+diag(bm4) <- 0
+edgePval <- Matrix::summary(t(bm4))[,3]
+FG.ig.vir.cyn_edge <- adj2igraph(Matrix::drop0(getRefit(SE_viral_cyano)),
+                             edge.attr=list(edgeP=edgePval),
+                             vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(cyano.ps_filt))))
+
+
+# Assuming your igraph object is named g and edge attribute is 'score'
+E(FG.ig.vir.cyn_edge)$score <- as.numeric(E(FG.ig.vir.cyn_edge)$edgeP) # Convert scores to numeric if they are not
+
+# Get the indices of the edges with score less than 0.7
+edge_ids_to_remove <- E(FG.ig.vir.cyn_edge)[ E(FG.ig.vir.cyn_edge)$edgeP < 0.7 ]
+
+# Remove these edges from the graph
+FG.ig.vir.cyn_edge <- delete_edges(FG.ig.vir.cyn_edge, edge_ids_to_remove)
+
+
+#plot with weights
+#plot_network(FG.ig, list(virps_filt, cyanops_filt))
+
+covar.vir.cyn <- igraph::as_data_frame(FG.ig.vir.cyn_edge, what="edges")
 
 #isolate for viral-cyano interactions only
 library(dplyr)
@@ -219,8 +278,26 @@ weights2 <- Matrix::summary(t(bm2))[,3]
 FG.ig.vdm <- adj2igraph(Matrix::drop0(getRefit(SE_vir_dol_mic)),
                         edge.attr=list(weight=weights2),
                         vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(doli.ps), taxa_names(micro.ps))))
+#Getting edge information
 
-covar.vdm <- igraph::as_data_frame(FG.ig.vdm, what="edges")
+bm5 <- symBeta(getOptMerge(SE_vir_dol_mic), mode="maxabs")
+diag(bm5) <- 0
+edgePval <- Matrix::summary(t(bm5))[,3]
+FG.ig.vdm_edge <- adj2igraph(Matrix::drop0(getRefit(SE_vir_dol_mic)),
+                                 edge.attr=list(edgeP=edgePval),
+                             vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(doli.ps), taxa_names(micro.ps))))
+
+
+# Assuming your igraph object is named g and edge attribute is 'score'
+E(FG.ig.vdm_edge)$score <- as.numeric(E(FG.ig.vdm_edge)$edgeP) # Convert scores to numeric if they are not
+
+# Get the indices of the edges with score less than 0.7
+edge_ids_to_remove <- E(FG.ig.vdm_edge)[ E(FG.ig.vdm_edge)$edgeP < 0.7 ]
+
+# Remove these edges from the graph
+FG.ig.vdm_edge <- delete_edges(FG.ig.vdm_edge, edge_ids_to_remove)
+
+covar.vdm <- igraph::as_data_frame(FG.ig.vdm_edge, what="edges")
 head(covar.vdm)
 
 vdm <- covar.vdm %>% 
@@ -337,7 +414,26 @@ FG.ig.bactnoCyan <- adj2igraph(Matrix::drop0(getRefit(SE_vir_bactnoCyan)),
                             edge.attr=list(weight=weights),
                             vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(bactnoCyan_filt))))
 
-covar.vir.bactnoCyan <- igraph::as_data_frame(FG.ig.bactnoCyan, what="edges")
+#Getting edge information
+
+bm6 <- symBeta(getOptMerge(SE_vir_bactnoCyan), mode="maxabs")
+diag(bm6) <- 0
+edgePval <- Matrix::summary(t(bm6))[,3]
+FG.ig.bactnoCyan_edge <- adj2igraph(Matrix::drop0(getRefit(SE_vir_bactnoCyan)),
+                             edge.attr=list(edgeP=edgePval),
+                             vertex.attr = list(name=c(taxa_names(virps_filt), taxa_names(bactnoCyan_filt))))
+
+
+# Assuming your igraph object is named g and edge attribute is 'score'
+E(FG.ig.bactnoCyan_edge)$score <- as.numeric(E(FG.ig.bactnoCyan_edge)$edgeP) # Convert scores to numeric if they are not
+
+# Get the indices of the edges with score less than 0.7
+edge_ids_to_remove <- E(FG.ig.bactnoCyan_edge)[ E(FG.ig.bactnoCyan_edge)$edgeP < 0.7 ]
+
+# Remove these edges from the graph
+FG.ig.bactnoCyan_edge <- delete_edges(FG.ig.bactnoCyan_edge, edge_ids_to_remove)
+
+covar.vir.bactnoCyan <- igraph::as_data_frame(FG.ig.bactnoCyan_edge, what="edges")
 
 #isolate for viral-cyano interactions only
 library(dplyr)
@@ -450,4 +546,3 @@ n1 <- make_ego_graph(vdm.pos.plot, order=1, nodes=node_name)
 n2 <- do.call(union, n1)
 
 subgraph(vdm.pos.plot, n2)
-
