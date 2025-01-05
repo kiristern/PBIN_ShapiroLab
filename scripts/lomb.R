@@ -102,8 +102,8 @@ bact_szn$asv
 vir_szn$asv
 # seasonal ASVs bact: 1069, 1149
 # seasonal ASVs vir: 10, 100
-# asv.sel <- str_c('ASV_', c(1069, 1149))
-asv.sel <- bact_szn$asv #[1:10] # select first 5 ASVs for testing
+asv.sel <- str_c('ASV_', c(221, 25, 19, 145, 161, 61,66,71,68, 93, 153, 203, 34, 40, 47))
+# asv.sel <- bact_szn$asv #[1:10] # select first 5 ASVs for testing
 
 
 
@@ -149,15 +149,15 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
               method = "gam",
               formula = y ~ s(x, k =12, bs = 'cc'),
               se = TRUE, 
-              size = 1,
+              size = 0.5,
               show.legend = TRUE, 
-              alpha = 0.7
+              alpha = 0.3
               ) + 
   # split into separate facets (plots) for each OTU
-  facet_wrap(~str_c(OTU),
-            # ~str_c(str_to_upper(OTU), Class, sep = ', '),
-            scales = 'free_y'
-            ) + 
+#   facet_wrap(#~str_c(OTU),
+#             ~str_c(str_to_upper(OTU), Class, sep = ', '),
+#             scales = 'free_y'
+#             ) + 
   # display y-axis as percentage
 #   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
   scale_x_continuous(
@@ -166,7 +166,7 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
                      labels = str_to_title(date_order) %>% str_sub(1,3),
                      name = 'Month',
                      ) +
-  guides(color = "none") + 
+#   guides(color = "none") + 
   ylab('Relative abundance') + 
   lil.strip + 
   theme(
