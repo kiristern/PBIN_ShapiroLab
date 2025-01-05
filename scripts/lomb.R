@@ -13,9 +13,9 @@ bact_szn %>% head()
 
 
 # load from backup
-# lomb_env <- new.env() # Create a new environment
-# load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
-# ls(lomb_env)  # List the variables in the new environment
+lomb_env <- new.env() # Create a new environment
+load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
+ls(lomb_env)  # List the variables in the new environment
 
 # ##### Get the data from the new environment
 # data_lomb <- lomb_env$lomb.02
@@ -56,8 +56,8 @@ bact_szn %>% head()
 # asv_periods %>% head() # check data
 
 # # plotting
-# lil.strip <- theme(strip.background = element_blank(),
-#                    strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+lil.strip <- theme(strip.background = element_blank(),
+                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
 # periodoplots <- asv_periods %>% 
 #   map(~ggplot(.x, aes(scanned, power)) + 
 #         geom_line(aes(group = asv)) + 
@@ -67,13 +67,6 @@ bact_szn %>% head()
 # periodoplots$ASV_30 # example plot for ASV_30
 
 
-
-
-
-
-lomb_env <- new.env() # Create a new environment
-load("arxiv/Large_data/Spieceasi.RData", envir = lomb_env) # Load the file into the new environment
-ls(lomb_env)  # List the variables in the new environment
 
 bact_ps <- lomb_env$bact3000filt
 vir_ps <- lomb_env$virps3000filt
@@ -121,20 +114,47 @@ ps_specific <- psmelt(ps) %>%
     as_tibble() %>%
     filter(OTU %in% asv.sel) # filter for specific ASVs
 
+
 # day of year col
 ps_specific$day_of_year <- as.numeric(format(as.Date(ps_specific$Date), format = "%j"))
+
+# Extract the year from each date
+ps_specific$Year <- as.numeric(format(as.Date(ps_specific$Date), format="%Y"))
+# Find the minimum year in the dataset
+min_year <- min(ps_specific$Year)
+# Calculate unique day numbers across all years
+ps_specific$unique_day <- (ps_specific$Year - min_year) * 365 + ps_specific$day_of_year
+# Adjust for leap years
+# Leap years have one extra day, so we add those for years that are leap years and after February 28.
+leap_years <- function(year) {
+  (year %% 4 == 0 & year %% 100 != 0) | (year %% 400 == 0)
+}
+is_leap <- leap_years(ps_specific$Year)
+# Add an extra day for dates in leap years after day 59 (February 28)
+ps_specific$unique_day <- ps_specific$unique_day + ifelse(is_leap & ps_specific$day_of_year > 59, 1, 0)
+# View the result
+print(ps_specific[, c("Date", "Year", "day_of_year", "unique_day")])
+
+n_years <- length(unique(ps_specific$Year))
 # # cumulative day numbers for the start of each month
 # num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
-num.days.wks <- c(0,rep(seq(7,365,7), length.out = 51))
-cumnum <- cumsum(num.days.wks)
+# cumnum <- cumsum(num.days.mnt)
+# cumul day numbers for start of each year
+num.days.yr <- c(0,rep(365, times=1, each=n_years-1))
+cumnum <- cumsum(num.days.yr)
+# cumul day numbers for start of each week
+# num.days.wks <- c(0,rep(4, times=11, each=n_years-1))
+# print(length(num.days.wks))
+# cumnum <- cumsum(num.days.wks)
+print(cumnum)
 # # month order
-# month.order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
-week.order <- c(1:52)
+# date_order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
+date_order <- sort(unique(ps_specific$Year)) 
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
-gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) + 
+gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) + 
   geom_jitter(aes(color = OTU), alpha = 0.4) + 
-  stat_smooth(aes(x = day_of_year,
+  stat_smooth(aes(x = unique_day,
                   group = OTU,
                   color = OTU),
               method = "gam",
@@ -147,13 +167,14 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
   scale_x_continuous(breaks = cumnum,
                     #  name = 'Month',
-                    name = "week",
+                    name = "Year",
                      # Display month abbrv first 3 letters
-                     labels = str_to_title(week.order)# %>% str_sub(1,3)
+                    #  labels = str_to_title(date_order) %>% str_sub(1,3)
+                    labels = c(seq(2006, 2013, by = 1))
                      ) +
   guides(color = "none") + 
   ylab('Relative abundance') + 
-#   lil.strip + 
+  lil.strip + 
   theme(legend.position = 'bottom',)
 gam.gg
 
