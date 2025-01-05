@@ -5,71 +5,110 @@ library(phyloseq)
 library(lubridate)
 library(lomb)
 
+# load seasonal data from nico
+bact_szn <- read.csv("lomb_seasonality_bact.csv")
+vir_szn <- read.csv("lomb_seasonality_virus.csv")
+
+bact_szn %>% head()
+
 
 # load from backup
+# lomb_env <- new.env() # Create a new environment
+# load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
+# ls(lomb_env)  # List the variables in the new environment
+
+# ##### Get the data from the new environment
+# data_lomb <- lomb_env$lomb.02
+# # data_lomb <- lomb_env[["lomb.sea.02"]] # alternative way to get the data
+# dplyr::glimpse(data_lomb) # compact view of data
+
+# # # select the data (change threshold b/c saved $lomb.sea.02 is empty)
+# lomb.sea.02 <- tibble( asv = names(data_lomb),
+#                        pval = map_dbl(data_lomb, ~.x$p.value),
+#                        peak = map_dbl(data_lomb, ~.x$peak),
+#                        interval  = map(data_lomb, ~.x$peak.at),
+#                        int.min = map_dbl(interval, ~.[[2]]),
+#                        int.max = map_dbl(interval, ~.[[1]])) %>% 
+#   mutate( qval = fdrtool::fdrtool(pval, statistic = 'pvalue')$qval) %>% 
+# #   filter(qval <= 0.01, peak >= 0.150, int.max <= 2)
+#     mutate(seasonality = ifelse(pval < 0.01 & peak >= 0.150 & int.max <= 2,
+#                                    'seasonal', 'non_seasonal')) # add column indicating if ASV is seasonal or not
+# lomb.sea.02 %>% dplyr::glimpse() # compact view of data
+
+# # View data
+# lomb.sea.02 %>% 
+#   mutate( index = str_replace(asv, 'asv', '') %>% as.integer()) %>% 
+#   arrange(index) %>% View()
+
+# # filter for seasonal and non-seasonal ASVs
+# seasonalASV <- lomb.sea.02 %>% filter(seasonality == 'seasonal') # filter for seasonal ASVs
+# nonseasonalASV <- lomb.sea.02 %>% filter(seasonality == 'non_seasonal') # filter for non-seasonal ASVs
+
+# ##### also in saved data (call lomb_env$results.lomb02)
+# results.lomb02_seasonal <- data_lomb[seasonalASV %>% pull(asv)]
+# dplyr::glimpse(results.lomb02_seasonal) # compact view of data
+
+# # plotting
+# asv_periods <- map(results.lomb02_seasonal, ~tibble( scanned = .x$scanned,
+#                                              power = .x$power)) %>% 
+#                                             bind_rows(.id = 'asv') %>% 
+#                                             split(.$asv)
+# asv_periods %>% head() # check data
+
+# # plotting
+# lil.strip <- theme(strip.background = element_blank(),
+#                    strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+# periodoplots <- asv_periods %>% 
+#   map(~ggplot(.x, aes(scanned, power)) + 
+#         geom_line(aes(group = asv)) + 
+#         facet_wrap(~asv) + 
+#         lil.strip
+#         )
+# periodoplots$ASV_30 # example plot for ASV_30
+
+
+
+
+
+
 lomb_env <- new.env() # Create a new environment
-load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
+load("arxiv/Large_data/Spieceasi.RData", envir = lomb_env) # Load the file into the new environment
 ls(lomb_env)  # List the variables in the new environment
 
-##### Get the data from the new environment
-data_lomb <- lomb_env$lomb.02
-# data_lomb <- lomb_env[["lomb.sea.02"]] # alternative way to get the data
-dplyr::glimpse(data_lomb) # compact view of data
+bact_ps <- lomb_env$bact3000filt
+vir_ps <- lomb_env$virps3000filt
 
-# # select the data (change threshold b/c saved $lomb.sea.02 is empty)
-lomb.sea.02 <- tibble( asv = names(data_lomb),
-                       pval = map_dbl(data_lomb, ~.x$p.value),
-                       peak = map_dbl(data_lomb, ~.x$peak),
-                       interval  = map(data_lomb, ~.x$peak.at),
-                       int.min = map_dbl(interval, ~.[[2]]),
-                       int.max = map_dbl(interval, ~.[[1]])) %>% 
-  mutate( qval = fdrtool::fdrtool(pval, statistic = 'pvalue')$qval) %>% 
-#   filter(qval <= 0.01, peak >= 0.150, int.max <= 2)
-    mutate(seasonality = ifelse(pval < 0.01 & peak >= 0.150 & int.max <= 2,
-                                   'seasonal', 'non_seasonal')) # add column indicating if ASV is seasonal or not
-lomb.sea.02 %>% dplyr::glimpse() # compact view of data
-
-# View data
-lomb.sea.02 %>% 
-  mutate( index = str_replace(asv, 'asv', '') %>% as.integer()) %>% 
-  arrange(index) %>% View()
-
-# filter for seasonal and non-seasonal ASVs
-seasonalASV <- lomb.sea.02 %>% filter(seasonality == 'seasonal') # filter for seasonal ASVs
-nonseasonalASV <- lomb.sea.02 %>% filter(seasonality == 'non_seasonal') # filter for non-seasonal ASVs
-
-##### also in saved data (call lomb_env$results.lomb02)
-results.lomb02_seasonal <- data_lomb[seasonalASV %>% pull(asv)]
-dplyr::glimpse(results.lomb02_seasonal) # compact view of data
-
-# plotting
-asv_periods <- map(results.lomb02_seasonal, ~tibble( scanned = .x$scanned,
-                                             power = .x$power)) %>% 
-                                            bind_rows(.id = 'asv') %>% 
-                                            split(.$asv)
-asv_periods %>% head() # check data
-
-# plotting
-lil.strip <- theme(strip.background = element_blank(),
-                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
-periodoplots <- asv_periods %>% 
-  map(~ggplot(.x, aes(scanned, power)) + 
-        geom_line(aes(group = asv)) + 
-        facet_wrap(~asv) + 
-        lil.strip
-        )
-periodoplots$ASV_30 # example plot for ASV_30
+tax_table(bact_ps) %>% head()
+tax_table(vir_ps) %>% head()
 
 
+##############
+# check unique taxa
+for (i in colnames(tax_table(bact_ps))) {
+  print(i) # Print the taxonomic rank (column name)
+  # Extract the column and get unique values
+  if (i != "ASV"){
+    unique_values <- unique(tax_table(bact_ps)[, i])
+    print(unique_values) # Print unique values for the rank
+  }
+}
+# only have Virus (kingdom) & Myoviridae (family) in this virps
+# bact_ps has more taxonomic ranks
 
 ############## 
-# select seasonal ASVs: 10, 103
-# non-seasonal ASVs: 1, 100
-# asv.sel <- str_c('ASV_', c(1,10, 100, 103))
-asv.sel <- str_c('ASV_', c(1:16, 19, 23, 46, 50)) # select from top20 relab plots
+bact_szn$asv 
+vir_szn$asv
+# seasonal ASVs bact: 1069, 1149
+# seasonal ASVs vir: 10, 100
+asv.sel <- str_c('ASV_', c(1069, 1149))
 
-# import phyloseq object
-ps <- lomb_env$virps3000filt
+
+
+
+
+# run for virps and bact_ps separately
+ps <- bact_ps
+# ps <- vir_ps.copy
 ps <- transform_sample_counts(ps, function(x) x / sum(x))
 
 # check phyloseq object
@@ -84,11 +123,13 @@ ps_specific <- psmelt(ps) %>%
 
 # day of year col
 ps_specific$day_of_year <- as.numeric(format(as.Date(ps_specific$Date), format = "%j"))
-# cumulative day numbers for the start of each month
-num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
-cumnum <- cumsum(num.days.mnt)
-# month order
-month.order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
+# # cumulative day numbers for the start of each month
+# num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
+num.days.wks <- c(0,rep(seq(7,365,7), length.out = 51))
+cumnum <- cumsum(num.days.wks)
+# # month order
+# month.order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
+week.order <- c(1:52)
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
 gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) + 
@@ -101,16 +142,18 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
               se = F, size = 1,
               show.legend = F, alpha = 0.7) + 
   # split into separate facets (plots) for each OTU
-  facet_wrap(~str_c(str_to_upper(OTU), ta5, sep = ', '), scales = 'free_y') + 
+  facet_wrap(~str_c(str_to_upper(OTU), Class, sep = ', '), scales = 'free_y') + 
   # display y-axis as percentage
   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
   scale_x_continuous(breaks = cumnum,
-                     name = 'Month',
+                    #  name = 'Month',
+                    name = "week",
                      # Display month abbrv first 3 letters
-                     labels = str_to_title(month.order) %>% str_sub(1,3)) +
+                     labels = str_to_title(week.order)# %>% str_sub(1,3)
+                     ) +
   guides(color = "none") + 
   ylab('Relative abundance') + 
-  lil.strip + 
+#   lil.strip + 
   theme(legend.position = 'bottom',)
 gam.gg
 
@@ -177,17 +220,7 @@ ggplot(therel,
 
 
 
-##############
-# check unique taxa
-for (i in colnames(tax_table(ps))) {
-  print(i) # Print the taxonomic rank (column name)
-  # Extract the column and get unique values
-  if (i != "species"){
-    unique_values <- unique(tax_table(ps)[, i])
-    print(unique_values) # Print unique values for the rank
-  }
-}
-# only have Virus (kingdom) & Myoviridae (family) in this dataset
+
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/analysis/seasonality_taxranks.R#L125
 
