@@ -17,6 +17,13 @@ lomb_env <- new.env() # Create a new environment
 load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
 ls(lomb_env)  # List the variables in the new environment
 
+bact_ps <- lomb_env$bact3000filt
+vir_ps <- lomb_env$virps3000filt
+
+
+
+
+
 # ##### Get the data from the new environment
 # data_lomb <- lomb_env$lomb.02
 # # data_lomb <- lomb_env[["lomb.sea.02"]] # alternative way to get the data
@@ -68,8 +75,7 @@ lil.strip <- theme(strip.background = element_blank(),
 
 
 
-bact_ps <- lomb_env$bact3000filt
-vir_ps <- lomb_env$virps3000filt
+
 
 tax_table(bact_ps) %>% head()
 tax_table(vir_ps) %>% head()
@@ -93,9 +99,8 @@ bact_szn$asv
 vir_szn$asv
 # seasonal ASVs bact: 1069, 1149
 # seasonal ASVs vir: 10, 100
-asv.sel <- str_c('ASV_', c(1069, 1149))
-
-
+# asv.sel <- str_c('ASV_', c(1069, 1149))
+asv.sel <- bact_szn$asv[1:5] # select first 5 ASVs for testing
 
 
 
@@ -115,6 +120,10 @@ ps_specific <- psmelt(ps) %>%
     filter(OTU %in% asv.sel) # filter for specific ASVs
 
 
+
+###################
+# plot seasonality
+###################
 # day of year col
 ps_specific$day_of_year <- as.numeric(format(as.Date(ps_specific$Date), format = "%j"))
 
@@ -153,65 +162,73 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
   )
 gam.gg
 
-periodo.gg <- map(data_lomb, ~tibble( scanned = .x$scanned,
-                                    power = .x$power)) %>%
-  bind_rows(.id = 'asv') %>% 
-  filter(asv %in% asv.sel) %>% 
-  mutate( desc = ifelse(asv == 'ASV_10', 'Strong peak with a periodicity of 1 year',
-                        'No patterns, random walk') %>% as.factor() %>% fct_inorder()) %>% 
-  ggplot(aes(scanned, power)) + 
-  geom_line( aes(group = asv)) + 
-  ylab('Strength recurrence') + 
-  # TODO: have multiple years... is strength reoccurrence computed across all years?
-  xlab('Periods checked (0.083 ~ 1/12 months)') + 
-  facet_wrap(~desc) +
-  lil.strip
-periodo.gg
-# gam.gg + periodo.gg + plot_layout(ncol = 1)
+# periodo.gg <- map(data_lomb, ~tibble( scanned = .x$scanned,
+#                                     power = .x$power)) %>%
+#   bind_rows(.id = 'asv') %>% 
+#   filter(asv %in% asv.sel) %>% 
+#   mutate( desc = ifelse(asv == 'ASV_10', 'Strong peak with a periodicity of 1 year',
+#                         'No patterns, random walk') %>% as.factor() %>% fct_inorder()) %>% 
+#   ggplot(aes(scanned, power)) + 
+#   geom_line( aes(group = asv)) + 
+#   ylab('Strength recurrence') + 
+#   # TODO: have multiple years... is strength reoccurrence computed across all years?
+#   xlab('Periods checked (0.083 ~ 1/12 months)') + 
+#   facet_wrap(~desc) +
+#   lil.strip
+# periodo.gg
+# # gam.gg + periodo.gg + plot_layout(ncol = 1)
 
-# save plot
-figpath <- 'figs250104' # today's date
-ggsave(filename = str_c(figpath, 'example_seasonality.png'), plot=gam.gg,
-       width = 11, height = 7)
+# # save plot
+# figpath <- 'figs250104' # today's date
+# ggsave(filename = str_c(figpath, 'example_seasonality.png'), plot=gam.gg,
+#        width = 11, height = 7)
 
 
-
+###############################
+# seasonality contribution to total relative abundance
+################################
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/seasonal_numbers.Rmd#L388
 ls(lomb_env)
-# seasonality contribution to total relative abundance
-lomb.sea.02 %>% dplyr::glimpse()
+# lomb.sea.02 %>% dplyr::glimpse()
 
-# viral ps
-virps <- lomb_env$viral_physeq
-virpsfilt <- lomb_env$virps3000filt
+bact_ps <- transform_sample_counts(bact_ps, function(x) x / sum(x))
+vir_ps <- transform_sample_counts(vir_ps, function(x) x / sum(x))
 
-season_relab <- taxa_sums(virps)[lomb.sea.02$asv] %>% sum(na.rm = TRUE)
-total.relab <- taxa_sums(virps) %>% sum()
-total.tested.relab <- taxa_sums(ps) %>% sum()
+# seasonal ASVs bacteria
+season_relab_bact <- taxa_sums(bact_ps)[bact_szn$asv] %>% sum(na.rm = TRUE)
+total.relab_bact <- taxa_sums(bact_ps) %>% sum()
+proportion_szn_of_tot_relab_bact <- season_relab_bact * 100 / total.relab_bact
+print(proportion_szn_of_tot_relab_bact)
 
-season.relab * 100 / total.relab
-season.relab * 100 / total.tested.relab
+# seasonal ASVs virus
+season_relab_vir <- taxa_sums(vir_ps)[bact_szn$asv] %>% sum(na.rm = TRUE)
+total.relab_vir <- taxa_sums(vir_ps) %>% sum()
+proportion_szn_of_tot_relab_vir <- season_relab_vir * 100 / total.relab_vir
+print(proportion_szn_of_tot_relab_vir)
 
 
-sam.sea <- otu_table(bl.phy)[,lombsea$asv] %>% rowSums()
-total.sea <- otu_table(bl.phy) %>% rowSums()
+szn_bact_otu <- prune_taxa(taxa_names(bact_ps) %in% bact_szn$asv, bact_ps)
+sam.sea_bact <- otu_table(szn_bact_otu) %>% colSums()
+total.sea_bact <- otu_table(bact_ps) %>% colSums()
 
-relabs <- sam.sea / total.sea 
+relabs_bact <- sam.sea_bact / total.sea_bact 
 
-mean(relabs)
-sd(relabs)
+mean(relabs_bact)
+sd(relabs_bact)
 
-therel <-  data.frame(this  = relabs, 
-           sample_data(bl.phy))
+therel <-  data.frame(season_relab_bact = relabs_bact, 
+           sample_data(bact_ps))
 
 therel %>% 
-  ggplot( aes(this)) + 
+  ggplot( aes(season_relab_bact)) + 
   geom_histogram()
 
+therel %>% head()
 
 ggplot(therel, 
-       aes(month, this)) + 
-  geom_jitter(alpha = 0.7)
+       aes(Month, season_relab_bact)) + 
+  geom_jitter(alpha = 0.7) +
+  ggtitle('Seasonal bacterial ASVs relative abundance by month')
 
 
 
