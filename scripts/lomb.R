@@ -247,10 +247,11 @@ tmpB$Date <- as.Date(tmpB$Date)
 # arrange by date
 tmpB <- tmpB %>%
   arrange(Date)
+tmpB$Year <- format(tmpB$Date, "%Y")  # Extract year as a character or integer
 
 # fix ordering by date
 ggplot(tmpB, 
-       aes(x = Date, y = season_relab_bact)) + 
+       aes(x = Date, y = season_relab_bact, color=Month)) + 
   geom_jitter(alpha = 0.7) +
   ggtitle('Seasonal bacterial ASVs relative abundance by month') +
   # axis labels by month
@@ -262,7 +263,7 @@ tmpB$Month <- factor(format(tmpB$Date, "%B"),
                       levels = month.name)
 
 ggplot(tmpB, 
-       aes(x = Month, y = season_relab_bact)) + 
+       aes(x = Month, y = season_relab_bact, color=Year)) + 
   geom_jitter(alpha = 0.7) +
   ggtitle('Seasonal bacterial ASVs relative abundance by month') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -297,9 +298,21 @@ tmpV %>% head()
 # Extract Month from Date and convert to a properly ordered factor
 tmpV$Month <- factor(format(tmpV$Date, "%B"), 
                       levels = month.name)
+# Extract year as a character
+tmpV$Year <- format(tmpV$Date, "%Y")  
 
+# fix ordering by date
 ggplot(tmpV, 
-       aes(x = Month, y = season_relab_vir)) + 
+       aes(x = Date, y = season_relab_bact, color=Month)) + 
+  geom_jitter(alpha = 0.7) +
+  ggtitle('Seasonal viral ASVs relative abundance by month') +
+  # axis labels by month
+#   scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# by Month coloured by Year
+ggplot(tmpV, 
+       aes(x = Month, y = season_relab_vir, color=Year)) + 
   geom_jitter(alpha = 0.7) +
   ggtitle('Seasonal viral ASVs relative abundance by month') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
