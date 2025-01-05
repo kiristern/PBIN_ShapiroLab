@@ -4,6 +4,7 @@ library(tidyverse)
 library(phyloseq)
 library(lubridate)
 library(lomb)
+library(ggplot2)
 
 # load seasonal data from nico
 bact_szn <- read.csv("lomb_seasonality_bact.csv")
@@ -25,13 +26,125 @@ ls(lomb_env)  # List the variables in the new environment
 # ls(lomb_env)  # List the variables in the new environment
 
 
-
+# Bps <- lomb_env$bact_physeq # unfiltered
 bact_ps <- lomb_env$bact3000filt
 vir_ps <- lomb_env$virps3000filt
+
+# add day of year col to metadata
+sample_data(bact_ps)$day_of_year <- as.numeric(format(as.Date(sample_data(bact_ps)$Date), format = "%j"))
 
 tax_table(bact_ps) %>% head()
 tax_table(vir_ps) %>% head()
 
+b.phy.relab <- transform_sample_counts(bact_ps, function(x) x / sum(x))
+taxa_sums(b.phy.relab) %>% head()
+
+#########################
+# taxa abundance prevalence
+#########################
+source('CRT_fncs.R')
+# abundance prevalence DF
+abunprevB <- calculate_abund_prevalen.df(b.phy.relab)
+
+# incorporate conditionally rare taxa
+abunprev.crt <- incorporate_crt_results(abunprevB, bact_ps, string = 'fl') %>% 
+  mutate( behavior = ifelse(crt, 'CRT', behavior), 
+          presence = factor(presence),
+          behavior = factor(behavior,
+                            levels = c('CRT', 'Narrow', 'Intermediate', 'Broad')))
+
+taxB <- as(tax_table(bact_ps), 'matrix') %>% as_tibble(rownames = 'asv')
+taxB %>% head()
+
+# distribution of behaviours
+abprevtax <- abunprev.crt %>%
+    left_join(taxB, by='asv') %>%
+    mutate(seasonal = ifelse(asv %in% bact_szn$asv, TRUE, FALSE))
+
+abprevsea <- abprevtax %>%
+    filter(asv %in% bact_szn$asv) %>%
+    select(asv, behavior, presence)
+
+abprevsea %>% 
+  select(behavior, presence) %>% 
+  table()
+
+abprevsea %>% filter(behavior == 'Broad') 
+abunprev.crt %>% filter(behavior == 'Broad') %>% 
+  left_join(taxB, by = 'asv')
+
+abprevtax %>% filter(behavior == 'Narrow') %>% pull(Class) %>% table()
+abprevtax %>% filter(behavior == 'Broad') %>% pull(Class) %>% table()
+
+
+#######################
+# # plotting
+lil.strip <- theme(strip.background = element_blank(),
+                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+
+geoMean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+
+b.phy.clr <- bact_ps %>% 
+  transform_sample_counts(., function(x) x+1) %>%
+  transform_sample_counts(function(x) log(x/geoMean(x)))
+taxa_sums(b.phy.clr) %>% head()
+
+# plotting specific winter
+# b.phy.asinh <- transform_sample_counts(bact_ps, function(x) asinh(x))
+# taxa_sums(b.phy.asinh) %>% head()
+
+
+
+
+# # cumulative day numbers for the start of each month
+num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
+cumnum <- cumsum(num.days.mnt)
+print(cumnum)
+# month order
+month.order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
+
+
+# plot - CLR
+sea.asvs <- psmelt(b.phy.clr) %>% 
+  filter(OTU %in% c('ASV_121', 'ASV_138', 'ASV_17')) %>% 
+  ggplot(aes(day_of_year, Abundance)) + 
+  geom_jitter(aes(color = OTU), alpha = 0.6, show.legend = F) + 
+  stat_smooth(aes(x = day_of_year,
+                  group = OTU,
+                  color = OTU), # continuous x-axis
+              method = "gam",
+              formula = y ~ s(x, k =12, bs = 'cc'),
+              se = F, size = 2, show.legend = F) + 
+  facet_wrap(~str_c(Class, ', ', str_to_upper(OTU))) + 
+  lil.strip + 
+  ylab('Centered log ratio (log10( ASV read count / geoMean))') + 
+  scale_x_continuous(breaks = cumnum,
+                     name = 'Month',
+                     labels = str_to_title(month.order) %>% str_sub(1,3)
+                    )
+sea.asvs
+
+# relab
+sea.asvs <- psmelt(b.phy.relab) %>% 
+  filter(OTU %in% c('ASV_121', 'ASV_138', 'ASV_17')) %>% 
+  ggplot(aes(day_of_year, Abundance)) + 
+  geom_jitter(aes(color = OTU), alpha = 0.6, show.legend = F) + 
+  stat_smooth(aes(x = day_of_year,
+                  group = OTU,
+                  color = OTU), # continuous x-axis
+              method = "gam",
+              formula = y ~ s(x, k =12, bs = 'cc'),
+              se = F, size = 2, show.legend = F) + 
+  facet_wrap(~str_c(Class, ', ', str_to_upper(OTU))) + 
+  lil.strip + 
+  ylab('Relative Abundance') + 
+  scale_x_continuous(breaks = cumnum,
+                     name = 'Month',
+                     labels = str_to_title(month.order) %>% str_sub(1,3)
+                    )
+sea.asvs
 
 # ##### Get the data from the new environment
 # data_lomb <- lomb_env$lomb.02
@@ -71,9 +184,7 @@ tax_table(vir_ps) %>% head()
 #                                             split(.$asv)
 # asv_periods %>% head() # check data
 
-# # plotting
-lil.strip <- theme(strip.background = element_blank(),
-                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+
 # periodoplots <- asv_periods %>% 
 #   map(~ggplot(.x, aes(scanned, power)) + 
 #         geom_line(aes(group = asv)) + 
@@ -129,16 +240,6 @@ ps_specific <- psmelt(ps) %>%
 ###################
 # plot seasonality
 ###################
-# day of year col
-ps_specific$day_of_year <- as.numeric(format(as.Date(ps_specific$Date), format = "%j"))
-
-# # cumulative day numbers for the start of each month
-num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
-cumnum <- cumsum(num.days.mnt)
-print(cumnum)
-# month order
-date_order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
-
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
 gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) + 
   geom_jitter(aes(color = OTU), alpha = 0.4) + 
@@ -163,7 +264,7 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
   scale_x_continuous(
                     breaks = cumnum,
                      # Display month abbrv first 3 letters
-                     labels = str_to_title(date_order) %>% str_sub(1,3),
+                     labels = str_to_title(month.order) %>% str_sub(1,3),
                      name = 'Month',
                      ) +
 #   guides(color = "none") + 
@@ -317,6 +418,16 @@ ggplot(tmpV,
   ggtitle('Seasonal viral ASVs relative abundance by month') +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+
+
+
+
+
+
+
+####################
+library(microeco)
+# https://chiliubio.github.io/microeco_tutorial/composition-based-class.html
 
 
 
