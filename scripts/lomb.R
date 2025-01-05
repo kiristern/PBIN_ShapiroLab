@@ -201,12 +201,17 @@ proportion_szn_of_tot_relab_bact <- season_relab_bact * 100 / total.relab_bact
 print(proportion_szn_of_tot_relab_bact)
 
 # seasonal ASVs virus
-season_relab_vir <- taxa_sums(vir_ps)[bact_szn$asv] %>% sum(na.rm = TRUE)
+season_relab_vir <- taxa_sums(vir_ps)[vir_szn$asv] %>% sum(na.rm = TRUE)
 total.relab_vir <- taxa_sums(vir_ps) %>% sum()
 proportion_szn_of_tot_relab_vir <- season_relab_vir * 100 / total.relab_vir
 print(proportion_szn_of_tot_relab_vir)
 
 
+
+###############################
+# plotting
+################################
+# bacterial seasonal
 szn_bact_otu <- prune_taxa(taxa_names(bact_ps) %in% bact_szn$asv, bact_ps)
 sam.sea_bact <- otu_table(szn_bact_otu) %>% colSums()
 total.sea_bact <- otu_table(bact_ps) %>% colSums()
@@ -216,19 +221,44 @@ relabs_bact <- sam.sea_bact / total.sea_bact
 mean(relabs_bact)
 sd(relabs_bact)
 
-therel <-  data.frame(season_relab_bact = relabs_bact, 
+tmpB <-  data.frame(season_relab_bact = relabs_bact, 
            sample_data(bact_ps))
 
-therel %>% 
+tmpB %>% 
   ggplot( aes(season_relab_bact)) + 
   geom_histogram()
 
-therel %>% head()
+tmpB %>% head()
 
-ggplot(therel, 
+ggplot(tmpB, 
        aes(Month, season_relab_bact)) + 
   geom_jitter(alpha = 0.7) +
   ggtitle('Seasonal bacterial ASVs relative abundance by month')
+
+
+# viral seasonal
+szn_vir_otu <- prune_taxa(taxa_names(vir_ps) %in% vir_szn$asv, vir_ps)
+sam.sea_vir <- otu_table(szn_vir_otu) %>% colSums()
+total.sea_vir <- otu_table(vir_ps) %>% colSums()
+
+relabs_vir <- sam.sea_vir / total.sea_vir 
+
+mean(relabs_vir)
+sd(relabs_vir)
+
+tmpV <-  data.frame(season_relab_vir = relabs_vir, 
+           sample_data(vir_ps))
+
+tmpV %>% 
+  ggplot( aes(season_relab_vir)) + 
+  geom_histogram()
+
+tmpV %>% head()
+
+ggplot(tmpV, 
+       aes(Month, season_relab_vir)) + 
+  geom_jitter(alpha = 0.7) +
+  ggtitle('Seasonal viral ASVs relative abundance by month')
 
 
 
