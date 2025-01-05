@@ -140,16 +140,18 @@ n_years <- length(unique(ps_specific$Year))
 # num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
 # cumnum <- cumsum(num.days.mnt)
 # cumul day numbers for start of each year
-num.days.yr <- c(0,rep(365, times=1, each=n_years-1))
-cumnum <- cumsum(num.days.yr)
+# num.days.yr <- c(0,rep(365, times=1, each=n_years-1))
+# cumnum <- cumsum(num.days.yr)
 # cumul day numbers for start of each week
-# num.days.wks <- c(0,rep(4, times=11, each=n_years-1))
+num.days.wks <- c(0,rep(4, times=11, each=n_years-1))
 # print(length(num.days.wks))
-# cumnum <- cumsum(num.days.wks)
+cumnum <- cumsum(num.days.wks)
 print(cumnum)
 # # month order
 # date_order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
-date_order <- sort(unique(ps_specific$Year)) 
+# date_order <- sort(unique(ps_specific$Year)) 
+date_order <- c(seq(0, 52, by = 4))
+total_weeks <- ceiling(max(ps_specific$unique_day) / 7)
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
 gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) + 
@@ -165,12 +167,16 @@ gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) +
   facet_wrap(~str_c(str_to_upper(OTU), Class, sep = ', '), scales = 'free_y') + 
   # display y-axis as percentage
   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
-  scale_x_continuous(breaks = cumnum,
+  scale_x_continuous(
+                    # breaks = cumnum,
+                    breaks = seq(0, max(ps_specific$unique_day), by = 7),  # Weekly breaks
                     #  name = 'Month',
-                    name = "Year",
+                    # name = "Year",
+                    name= "week",
                      # Display month abbrv first 3 letters
                     #  labels = str_to_title(date_order) %>% str_sub(1,3)
-                    labels = c(seq(2006, 2013, by = 1))
+                    # labels = c(seq(2006, 2013, by = 1))
+                     labels = seq(1, total_weeks),  # Week numbers
                      ) +
   guides(color = "none") + 
   ylab('Relative abundance') + 
