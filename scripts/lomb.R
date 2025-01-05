@@ -33,6 +33,7 @@ vir_ps <- lomb_env$virps3000filt
 # add day of year col to metadata
 sample_data(bact_ps)$day_of_year <- as.numeric(format(as.Date(sample_data(bact_ps)$Date), format = "%j"))
 
+
 tax_table(bact_ps) %>% head()
 tax_table(vir_ps) %>% head()
 
@@ -91,13 +92,8 @@ b.phy.clr <- bact_ps %>%
   transform_sample_counts(function(x) log(x/geoMean(x)))
 taxa_sums(b.phy.clr) %>% head()
 
-# plotting specific winter
-# b.phy.asinh <- transform_sample_counts(bact_ps, function(x) asinh(x))
-# taxa_sums(b.phy.asinh) %>% head()
 
-
-
-
+# plot
 # # cumulative day numbers for the start of each month
 num.days.mnt <- c(0,31,28,31,30,31,30,31,31,30,31,30)
 cumnum <- cumsum(num.days.mnt)
@@ -145,6 +141,73 @@ sea.asvs <- psmelt(b.phy.relab) %>%
                      labels = str_to_title(month.order) %>% str_sub(1,3)
                     )
 sea.asvs
+
+
+
+#######################
+# Comparison trends ASVs
+#######################
+tax_table(bact_ps) %>% head()
+
+vals <- abprevtax %>% 
+  pull(Genus) %>% 
+  table() %>% sort() 
+vals
+
+# compare g__Dolichospermum and g__Microcystis
+genera <- vals %>% 
+           names() %>% tail(n=5)
+
+asvs <- abprevtax %>% 
+  filter(Genus %in% c(genera, 'g__Microcystis')) %>% 
+  pull(asv)
+
+
+
+
+# plot
+b.phy.asinh <- transform_sample_counts(bact_ps, function(x) asinh(x))
+taxa_sums(b.phy.asinh) %>% head()
+
+psmelt(b.phy.asinh) %>%
+    filter(OTU %in% asvs) %>%
+    ggplot(aes(Month, Abundance)) + 
+    geom_jitter(alpha = 0.6) + 
+    stat_smooth(aes(x = Month,
+                    group = OTU,
+                    color = Family),
+                method = "gam",
+                formula = y ~ s(x, k =12, bs = 'cc'),
+                se = F, size = 2,
+                show.legend = F, alpha = 0.7) + 
+    facet_wrap(~Genus)
+
+
+
+
+Goverview <- taxB %>% 
+  filter(Genus %in% c('g__Microcystis', 'g__Dolichospermum')) %>% #| order %in% 'HIMB59' ) %>% 
+  pull(asv)
+
+psm.asinh %>% 
+  filter(OTU %in% Goverview) %>% 
+  mutate(seasonal = ifelse(OTU %in% bact_szn$asv, TRUE, FALSE)) %>% 
+  ggplot(aes(Month, Abundance)) + 
+    geom_jitter(alpha = 0.6) + 
+    stat_smooth(aes(x = Month,
+                    group = OTU,
+                    color = Genus),
+                method = "gam",
+                formula = y ~ s(x, k =12, bs = 'cc'),
+                se = F, size = 2,
+                show.legend = F, alpha = 0.7) + 
+    facet_wrap(~Genus + seasonal)
+
+
+
+
+
+
 
 # ##### Get the data from the new environment
 # data_lomb <- lomb_env$lomb.02
@@ -320,6 +383,14 @@ season_relab_vir <- taxa_sums(vir_ps)[vir_szn$asv] %>% sum(na.rm = TRUE)
 total.relab_vir <- taxa_sums(vir_ps) %>% sum()
 proportion_szn_of_tot_relab_vir <- season_relab_vir * 100 / total.relab_vir
 print(proportion_szn_of_tot_relab_vir)
+
+
+####################
+# contribution of each behaviour
+####################
+sum(taxa_sums(b.phy.relab)[abprevsea %>% filter(behavior == 'Broad') %>% pull(asv)]) * 100 / total.relab_bact
+sum(taxa_sums(b.phy.relab)[abprevsea %>% filter(behavior == 'Narrow') %>% pull(asv)]) * 100 / total.relab_bact
+sum(taxa_sums(b.phy.relab)[abprevsea %>% filter(behavior %in% c('Other', 'CRT')) %>% pull(asv)]) * 100 / total.relab_bact
 
 
 
