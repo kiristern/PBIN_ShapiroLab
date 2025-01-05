@@ -159,7 +159,24 @@ non_zero_data <- ps_specific[ps_specific$Abundance > 0, ]
 # Get unique days and their corresponding week numbers where Abundance > 0
 non_zero_days <- unique(non_zero_data$unique_day)
 non_zero_labels <- non_zero_data$week_number[match(non_zero_days, non_zero_data$unique_day)]
-
+# map week number to month
+week_to_month <- function(week) {
+  if (week >= 1 & week <= 4) return("January")
+  if (week >= 5 & week <= 8) return("February")
+  if (week >= 9 & week <= 13) return("March")
+  if (week >= 14 & week <= 17) return("April")
+  if (week >= 18 & week <= 21) return("May")
+  if (week >= 22 & week <= 26) return("June")
+  if (week >= 27 & week <= 30) return("July")
+  if (week >= 31 & week <= 35) return("August")
+  if (week >= 36 & week <= 39) return("September")
+  if (week >= 40 & week <= 43) return("October")
+  if (week >= 44 & week <= 48) return("November")
+  if (week >= 49 & week <= 52) return("December")
+  return(NA) # For invalid week numbers
+}
+# Apply the function to the dataset
+non0_months <- sapply(non_zero_labels, week_to_month)
 
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
@@ -179,13 +196,12 @@ gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) +
   scale_x_continuous(
                     # breaks = cumnum,
                     breaks = non_zero_days, # Use filtered unique_day values
-                    #  name = 'Month',
-                    # name = "Year",
-                    name= "week",
                      # Display month abbrv first 3 letters
                     #  labels = str_to_title(date_order) %>% str_sub(1,3)
                     # labels = c(seq(2006, 2013, by = 1))
-                    labels =  non_zero_labels, # Map to 1–52 week labels
+                    labels =  non0_months, # week to month
+                     name = 'Month',
+                    # name = "Year",
                      ) +
   guides(color = "none") + 
   ylab('Relative abundance') + 
