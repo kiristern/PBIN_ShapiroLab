@@ -150,8 +150,17 @@ print(cumnum)
 # # month order
 # date_order <- c('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')
 # date_order <- sort(unique(ps_specific$Year)) 
-date_order <- c(seq(0, 52, by = 4))
-total_weeks <- ceiling(max(ps_specific$unique_day) / 7)
+
+
+# Map unique_day to week numbers, cycling through 1:52
+ps_specific$week_number <- ((ps_specific$unique_day - 1) %% 52) + 1
+# Filter unique days where Abundance > 0
+non_zero_data <- ps_specific[ps_specific$Abundance > 0, ]
+# Get unique days and their corresponding week numbers where Abundance > 0
+non_zero_days <- unique(non_zero_data$unique_day)
+non_zero_labels <- non_zero_data$week_number[match(non_zero_days, non_zero_data$unique_day)]
+
+
 
 # https://github.com/adriaaulaICM/bbmo_niche_sea/blob/6cef1b004e75a88a007975f6c5ebc37a40d32b0e/src/figures/sea_explanation.R#L45
 gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) + 
@@ -169,19 +178,21 @@ gam.gg <- ggplot(data = ps_specific, aes(unique_day,Abundance)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
   scale_x_continuous(
                     # breaks = cumnum,
-                    breaks = seq(0, max(ps_specific$unique_day), by = 7),  # Weekly breaks
+                    breaks = non_zero_days, # Use filtered unique_day values
                     #  name = 'Month',
                     # name = "Year",
                     name= "week",
                      # Display month abbrv first 3 letters
                     #  labels = str_to_title(date_order) %>% str_sub(1,3)
                     # labels = c(seq(2006, 2013, by = 1))
-                     labels = seq(1, total_weeks),  # Week numbers
+                    labels =  non_zero_labels, # Map to 1–52 week labels
                      ) +
   guides(color = "none") + 
   ylab('Relative abundance') + 
   lil.strip + 
-  theme(legend.position = 'bottom',)
+  theme(legend.position = 'bottom',
+        axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels
+  )
 gam.gg
 
 periodo.gg <- map(data_lomb, ~tibble( scanned = .x$scanned,
