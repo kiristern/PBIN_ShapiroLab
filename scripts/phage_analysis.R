@@ -33,6 +33,8 @@ summarize_phyloseq(virps3000filt2)
 
 # sort by date
 sample_data(virps3000filt2) <-sample_data(virps3000filt2)[order(sample_data(virps3000filt2)$Date),]
+# Create an increasing numeric sequence
+sample_data(virps3000filt2)$Date_numeric <- seq_along(sample_data(virps3000filt2)$Date)
 
 # add new column to sample_data (combine day and month)
 sample_data(virps3000filt2)$day_month <- as.factor(paste(sample_data(virps3000filt2)$Day, sample_data(virps3000filt2)$Month, sep = "."))
@@ -45,6 +47,8 @@ sample_data(virps3000filt2)$day_month <- as.factor(paste(sample_data(virps3000fi
 # # another way to do the same thing (save as str)
 # sample_data(virps3000filt2)$desc_date <- apply(split_desc[, 1:3], 1, function(x) paste(x, collapse = "."))
 # # sample_data(virps3000filt2)$desc_date2 <- NULL # rm accidental added column
+
+
 
 
 # separate into pelagic and littoral phyloseq objects
@@ -164,34 +168,34 @@ plt_pel_ab <- plt_rel_ab_pel + scale_x_discrete(labels = c(sample_data(vir_ps_pe
 ggpubr::ggarrange(plt_lit_ab, plt_pel_ab, ncol=1, nrow=2, common.legend = T, legend="bottom")
 
 
-# require package ggh4x
-rel_ab_filt <- t3$plot_bar(others_color = "grey90", 
-            facet = c("Site","Years"), 
-            xtext_keep = T, 
-            legend_text_italic = FALSE,
-            color_values = color_dict,
-            x_axis_name = "day_month", # change x-axis name
-            barwidth=1,
-            use_alluvium = TRUE,
-            clustering=TRUE,
-            ) + 
-  theme(axis.text.y.left = element_text(size = 13),
-        axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1),
-        axis.title.y = element_text(size = 13),
-        title = element_text(size = 12),
-        legend.position = 'bottom',
-  ) + ggtitle("Top 20 - Littoral & Pelagic") + 
-  guides( # plot legend at bottom in 2 rows
-            colour=guide_legend(
-                                nrow=2,
-                                byrow=TRUE,
-                              ),
-            fill=guide_legend(
-                                nrow=2,
-                                byrow=TRUE,
-                              )
-  )
-rel_ab_filt
+# # require package ggh4x
+# rel_ab_filt <- t3$plot_bar(others_color = "grey90", 
+#             facet = c("Site","Years"), 
+#             xtext_keep = T, 
+#             legend_text_italic = FALSE,
+#             # color_values = color_dict,
+#             # x_axis_name = "day_month", # change x-axis name
+#             barwidth=1,
+#             use_alluvium = TRUE,
+#             clustering=TRUE,
+#             ) + 
+#   theme(axis.text.y.left = element_text(size = 13),
+#         axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1),
+#         axis.title.y = element_text(size = 13),
+#         title = element_text(size = 12),
+#         legend.position = 'bottom',
+#   ) + ggtitle("Top 20 - Littoral & Pelagic") + 
+#   guides( # plot legend at bottom in 2 rows
+#             colour=guide_legend(
+#                                 nrow=2,
+#                                 byrow=TRUE,
+#                               ),
+#             fill=guide_legend(
+#                                 nrow=2,
+#                                 byrow=TRUE,
+#                               )
+#   )
+# rel_ab_filt
 
 
 #### nico
@@ -269,9 +273,24 @@ CRT_analysis<-SimpleRareToPrev.f(otu_fp="virps3000_df.txt", abund_thresh=0.0001,
 #### Shannon with regression line
 # https://chiliubio.github.io/microeco_tutorial/diversity-based-class.html#trans_alpha-class
 library(magrittr)
+library("paletteer")
+
 filtered_virps <- phyloseq2meco(virps3000filt2) # convert phyloseq to meco
 filtered_virps$sample_table$Site %<>% factor(., levels = unique(.)) # groupby Site
+# for shannon
+filtered_virps$sample_table$Years %<>% factor(., levels = unique(.)) # groupby Years
+
+
+
+
+##########################
+# groupby Site and Years
+########################
 t1_alpha <- trans_alpha$new(dataset = filtered_virps, group = "Site", by_group="Years")
+
+t1_alpha$data_alpha$Measure %>% unique()
+t1_alpha$data_alpha %>% head()
+t1_alpha$data_alpha$Value 
 
 # test the differences among groups 
 ## Kruskal-Wallis Rank Sum Test (overall test when groups > 2) 
@@ -298,6 +317,17 @@ plot_alpha <- t1_alpha$plot_alpha(
   )
 # plot_alpha # boxplot without reg line
 # plot_alpha$data %>% head()
+
+# scatter
+t1_alpha$plot_alpha(
+  plot_type = "ggdotplot", # ggboxplot | ggdotplot | ggviolin | ggstripchart | ggerrorplot | errorbar | barerrorbar
+  plot_SE = TRUE, 
+  measure = "Shannon", 
+  add_line = TRUE, 
+  line_type = 2,
+  add="jitter",
+  )
+
 
 ### get ggplot params to reuse below
 # extract colours used
@@ -384,10 +414,173 @@ plt_shannon +
   )
 
 
+##########################
+# Shannon across each Years
+########################
+t1_shannon <- trans_alpha$new(dataset = filtered_virps, group = "Years")
+t1_shannon$cal_diff(method = "KW", measure = "Shannon", KW_dunn_letter = TRUE)
+
+# t1shan1<-t1_shannon$plot_alpha(
+#   plot_type = "ggdotplot", # ggboxplot | ggdotplot | ggviolin | ggstripchart | ggerrorplot | errorbar | barerrorbar
+#   plot_SE = FALSE, 
+#   fill = "Years",
+#   measure = "Shannon", 
+#   # add_line = TRUE, 
+#   line_type = 1,
+#   binwidth = 0.1,
+#   )
+# t1shan1
+# t1shan$data %>% head()
+# # get alpha for shannon
+alpha_shannon <- t1_shannon$data_alpha %>% filter(Measure == "Shannon")
+# alpha_shannon %>% head()
+
+t1 <- trans_env$new(dataset=NULL, add_data = alpha_shannon)
+t1$dataset$sample_table <- t1$data_env
+shan <- t1$plot_scatterfit(
+  x = "Date_numeric", 
+  y = "Value", 
+  type = "cor", 
+  group = "Years",
+  color_values = paletteer_d("ggsci::category10_d3")
+) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +  # Add regression line
+  xlab("Years") +
+  ylab("Shannon") +
+  theme(axis.title = element_text(size = 15))
+shan
+# shan_reg <- shan$data
+
+
+
+# Shannon
+shan_years <- trans_alpha$new(dataset = filtered_virps, group = "Date", by_group="Years")
+# shan_years <- trans_alpha$new(dataset = filtered_virps, group = "Date", by_group="Years")
+shan_years$cal_diff(method = "KW", measure = "Shannon", KW_dunn_letter = TRUE)
+# t1shan<-shan_years$plot_alpha(
+#   plot_type = "ggdotplot", # ggboxplot | ggdotplot | ggviolin | ggstripchart | ggerrorplot | errorbar | barerrorbar
+#   plot_SE = FALSE, 
+#   fill = "Years",
+#   measure = "Shannon", 
+#   add_line = TRUE, 
+#   line_type = 1,
+#   binwidth = 0.1,
+#   point_size = 1, point_alpha = 0.1, line_se = TRUE, line_size = 0.5, shape_values = c(16, 17, 7)
+#   )+ geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +  # Add regression line
+#   xlab("Years") +
+#   ylab("Shannon") +
+#   theme(axis.title = element_text(size = 15))
+# t1shan
+
+
+# Shannon regression
+tmp <- shan_years$data_stat %>% base::subset(Measure == "Shannon") # subset for Shannon metric
+
+# new mircoeco object
+tmp_t1 <- trans_env$new(dataset=NULL, add_data = tmp)
+tmp_t1$dataset$sample_table <- tmp_t1$data_env
+# as date
+tmp_t1$dataset$sample_table$Date <- as.Date(tmp_t1$dataset$sample_table$Date, format = "%Y-%m-%d")
+
+# manually plot
+shan <- ggplot(tmp_t1$dataset$sample_table, aes(x = Date, y = Mean, color = factor(Years))) +
+  geom_point() +
+  # Add regression line
+  geom_smooth(
+    method = "lm",  # Linear regression
+    formula = y ~ x,  # Formula for regression
+    se = TRUE,  # Include shaded standard error
+    color = "black",  # Color of the regression line
+    fill = "lightblue",  # Color of the standard error shading
+    linewidth=0.5,
+  )+  
+  scale_color_manual(values = paletteer_d("ggsci::category10_d3")) +
+  xlab("Years") +
+  ylab("Shannon") +
+  # theme_minimal() +
+  theme(axis.title = element_text(size = 15))
+shan
+reg <- shan$data
+
+lm_reg <- lm(Mean~Date, data = reg)
+# get the coefficients
+lm_reg_summ<-summary(lm_reg)
+# get R-squared and p-value
+lm_reg_rsq<-lm_reg_summ$r.squared # R-squared -- fig displays: R-val==sqrt(lm_pel_rsq)=0.562 
+lm_reg_pval<-lm_reg_summ$coefficients[2,4] # p-value
+
+# regline by year + global regline
+# plt_shannon <- shan + 
+  # geom_line(data=fortify(lm_lit), aes(x=factor(x), y=.fitted, group=1), color = shannon_palette[1], size=0.8) 
+  # geom_abline(intercept = lm_reg_summ$coefficients[1], slope = lm_reg_summ$coefficients[2], 
+    # color = "black", linewidth=0.5, linetype = "dashed",)
+
+shan +
+  annotate(
+    "text", 
+    x=mean(as.Date(range(tmp_t1$dataset$sample_table$Date))), # center of x-axis
+    y = max(tmp_t1$dataset$sample_table$Mean)+0.25*diff(range(tmp_t1$dataset$sample_table$Mean)), # slightly above max y 
+    label = paste0("R² = ", round(lm_reg_rsq, 3), "\nP = ", signif(lm_reg_pval, 3)),
+    # hjust = 0.1, vjust=1.0, # place right below legend
+    size = 3, color = "black"
+    )
 
 
 
 
+# Shannon across each sample (global)
+shannon_reg <- tmp_t1$plot_scatterfit(
+  x = "Date", 
+  y = "Mean", 
+  type = "cor", 
+  group = "Years",
+  color_values =paletteer_d("ggsci::category10_d3")
+  ) + 
+    xlab("Years") + 
+    ylab("Shannon") + 
+    theme(axis.title = element_text(size = 15))
+shannon_reg # scatter plot with regression lines
+
+# Define the data for the regression line
+regression_line_data <- data.frame(
+  x = range(t1$dataset$sample_table$Date_numeric),
+  y = predict(lm(Value ~ Date_numeric, data = t1$dataset$sample_table),
+              newdata = data.frame(Date_numeric = range(t1$dataset$sample_table$Date_numeric)))
+)
+lm_reg_data = lm(y~x, data = regression_line_data)
+
+# global reg line
+plt_shannon <- shannon_reg + 
+  # geom_line(data=fortify(lm_reg), aes(x=factor(x), y=.fitted, group=1), color = "black", size=0.8) #+ 
+  geom_abline(intercept = lm_reg_data$coefficients[1], slope = lm_reg_data$coefficients[2], 
+    color = "black", linewidth=0.5, linetype = "dashed",)
+
+plt_shannon +
+  annotate(
+    "text", 
+    x=mean(t1$dataset$sample_table$Date_numeric), # center of x-axis
+    y = max(tmp_t1$dataset$sample_table$Mean)+0.1*diff(range(tmp_t1$dataset$sample_table$Mean)), # slightly above max y 
+    label = paste0("R² = ", round(lm_reg_rsq, 3), "\nP = ", signif(lm_reg_pval, 3)),
+    # hjust = 0.1, vjust=1.0, # place right below legend
+    size = 3, color = "black"
+    ) +
+  theme(
+    axis.title = element_text(size = 10),
+    axis.text.x = element_text(angle = 90, hjust = 1)  # Rotate x-axis labels
+  ) +
+  ## rename x-axis labels
+  # scale_x_discrete(labels = c(t1$dataset$sample_table$day_month),
+  # ## rm overlapped text
+  # # guide = guide_axis(check.overlap = TRUE)
+  # ## stagger overlapped text (instead of rm)
+  #   # guide = guide_axis(n.dodge = 2),
+  # )
+  ## Keep only every 2nd label
+  scale_x_discrete(
+    labels = function(labels) {
+      ifelse(seq_along(labels) %% 2 == 1, labels, "")
+    }
+  )
 
 
 #### ALPHA DIV ####
