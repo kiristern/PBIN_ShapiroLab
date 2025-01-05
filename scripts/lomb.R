@@ -243,11 +243,30 @@ tmpB %>%
   geom_histogram()
 
 tmpB %>% head()
+tmpB$Date <- as.Date(tmpB$Date)
+# arrange by date
+tmpB <- tmpB %>%
+  arrange(Date)
+
+# fix ordering by date
+ggplot(tmpB, 
+       aes(x = Date, y = season_relab_bact)) + 
+  geom_jitter(alpha = 0.7) +
+  ggtitle('Seasonal bacterial ASVs relative abundance by month') +
+  # axis labels by month
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Extract Month from Date and convert to a properly ordered factor
+tmpB$Month <- factor(format(tmpB$Date, "%B"), 
+                      levels = month.name)
 
 ggplot(tmpB, 
-       aes(Month, season_relab_bact)) + 
+       aes(x = Month, y = season_relab_bact)) + 
   geom_jitter(alpha = 0.7) +
-  ggtitle('Seasonal bacterial ASVs relative abundance by month')
+  ggtitle('Seasonal bacterial ASVs relative abundance by month') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 
 # viral seasonal
@@ -263,16 +282,28 @@ sd(relabs_vir)
 tmpV <-  data.frame(season_relab_vir = relabs_vir, 
            sample_data(vir_ps))
 
+tmpV %>% head()
+tmpV$Date <- as.Date(tmpV$Date)
+# arrange by date
+tmpV <- tmpV %>%
+  arrange(Date)
+
 tmpV %>% 
   ggplot( aes(season_relab_vir)) + 
   geom_histogram()
 
 tmpV %>% head()
 
+# Extract Month from Date and convert to a properly ordered factor
+tmpV$Month <- factor(format(tmpV$Date, "%B"), 
+                      levels = month.name)
+
 ggplot(tmpV, 
-       aes(Month, season_relab_vir)) + 
+       aes(x = Month, y = season_relab_vir)) + 
   geom_jitter(alpha = 0.7) +
-  ggtitle('Seasonal viral ASVs relative abundance by month')
+  ggtitle('Seasonal viral ASVs relative abundance by month') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 
 
