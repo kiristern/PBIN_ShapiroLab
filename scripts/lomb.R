@@ -11,17 +11,26 @@ vir_szn <- read.csv("lomb_seasonality_virus.csv")
 
 bact_szn %>% head()
 
-
-# load from backup
+############################
+# Import from .RData
+############################
+# load from backup -- faster -- use if only need phyloseq data
 lomb_env <- new.env() # Create a new environment
 load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
 ls(lomb_env)  # List the variables in the new environment
 
+# load from backup -- slower but needed for modularity info
+# lomb_env <- new.env() # Create a new environment
+# load("arxiv/Large_data/Spieceasi.RData", envir = lomb_env) # Load the file into the new environment
+# ls(lomb_env)  # List the variables in the new environment
+
+
+
 bact_ps <- lomb_env$bact3000filt
 vir_ps <- lomb_env$virps3000filt
 
-
-
+tax_table(bact_ps) %>% head()
+tax_table(vir_ps) %>% head()
 
 
 # ##### Get the data from the new environment
@@ -75,12 +84,6 @@ lil.strip <- theme(strip.background = element_blank(),
 
 
 
-
-
-tax_table(bact_ps) %>% head()
-tax_table(vir_ps) %>% head()
-
-
 ##############
 # check unique taxa
 for (i in colnames(tax_table(bact_ps))) {
@@ -100,14 +103,16 @@ vir_szn$asv
 # seasonal ASVs bact: 1069, 1149
 # seasonal ASVs vir: 10, 100
 # asv.sel <- str_c('ASV_', c(1069, 1149))
-asv.sel <- bact_szn$asv[1:5] # select first 5 ASVs for testing
+asv.sel <- bact_szn$asv #[1:10] # select first 5 ASVs for testing
 
 
 
 # run for virps and bact_ps separately
 ps <- bact_ps
 # ps <- vir_ps.copy
+taxa_sums(ps) %>% head() # sum of taxa (ASVs x taxa) -- raw counts
 ps <- transform_sample_counts(ps, function(x) x / sum(x))
+taxa_sums(ps) %>% head() # sum of taxa (ASVs x taxa) -- transformed relab
 
 # check phyloseq object
 tax_table(ps) %>% head() # taxonomy table (ASVs x taxa)
@@ -139,27 +144,33 @@ gam.gg <- ggplot(data = ps_specific, aes(day_of_year,Abundance)) +
   geom_jitter(aes(color = OTU), alpha = 0.4) + 
   stat_smooth(aes(x = day_of_year,
                   group = OTU,
-                  color = OTU),
+                  color = OTU
+                  ),
               method = "gam",
               formula = y ~ s(x, k =12, bs = 'cc'),
-              se = F, size = 1,
-              show.legend = F, alpha = 0.7) + 
+              se = TRUE, 
+              size = 1,
+              show.legend = TRUE, 
+              alpha = 0.7
+              ) + 
   # split into separate facets (plots) for each OTU
-  facet_wrap(~str_c(str_to_upper(OTU), Class, sep = ', '), scales = 'free_y') + 
+#   facet_wrap(~str_c(str_to_upper(OTU), Class, sep = ', '), scales = 'free_y') + 
   # display y-axis as percentage
-  scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
+#   scale_y_continuous(labels = scales::percent_format(accuracy = 2L)) +
   scale_x_continuous(
                     breaks = cumnum,
                      # Display month abbrv first 3 letters
                      labels = str_to_title(date_order) %>% str_sub(1,3),
                      name = 'Month',
                      ) +
-  guides(color = "none") + 
+#   guides(color = "none") + 
   ylab('Relative abundance') + 
   lil.strip + 
-  theme(legend.position = 'bottom',
+  theme(
+        # legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels
-  )
+  )+
+  ggtitle('Seasonal ASVs relative abundance (bacteria)')
 gam.gg
 
 # periodo.gg <- map(data_lomb, ~tibble( scanned = .x$scanned,
