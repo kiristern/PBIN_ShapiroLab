@@ -10,7 +10,7 @@ library(ggplot2)
 bact_szn <- read.csv("lomb_seasonality_bact.csv")
 vir_szn <- read.csv("lomb_seasonality_virus.csv")
 
-bact_szn %>% head()
+vir_szn %>% head()
 
 ############################
 # Import from .RData
@@ -26,21 +26,50 @@ ls(lomb_env)  # List the variables in the new environment
 lomb_filt <- lomb_env$lomb.sea.02V
 dplyr::glimpse(lomb_filt) # compact view of data
 
+virps <- lomb_env$virps3000filt
+bactps <- lomb_env$bact3000filt
 
-# Bps <- lomb_env$bact_physeq # unfiltered
-bact_ps <- lomb_env$bact3000filt
-vir_ps <- lomb_env$virps3000filt
+##############
+# Modify taxonomy table -- simplify
+tax.raw <- bactps %>% tax_table() %>% as.data.frame() 
 
-# add day of year col to metadata
-sample_data(bact_ps)$day_of_year <- as.numeric(format(as.Date(sample_data(bact_ps)$Date), format = "%j"))
+# subset taxa
+tax.genus <- c("g__Microcystis", "g__Dolichospermum", "g__Synechococcus", "g__Fimbriimonas", "g__Pseudomonas","g__Steroidobacter", "g__Nitrospira", "g__Pseudanabaena")
 
-tax_table(bact_ps) %>% head()
-tax_table(vir_ps) %>% head()
+# Access the taxonomy table
+# Extract the taxonomy table
+tax_table_df <- as.data.frame(tax_table(bactps))
 
+# Step 2: Identify taxa to keep and modify others
+tax_table_df <- tax_table_df %>%
+  mutate(
+    Kingdom = ifelse(Genus %in% tax.genus, Kingdom, "Other"),
+    Phylum = ifelse(Genus %in% tax.genus, Phylum, "Other"),
+    Class = ifelse(Genus %in% tax.genus, Class, "Other"),
+    Order = ifelse(Genus %in% tax.genus, Order, "Other"),
+    Family = ifelse(Genus %in% tax.genus, Family, "Other"),
+    Genus = ifelse(Genus %in% tax.genus, Genus, "Other")
+  )
+# Step 3: Update the taxonomy table in phyloseq object
+tax_table(bactps) <- as.matrix(tax_table_df)
 
+# check unique taxa
+for (i in colnames(tax_table(bactps))) {
+  print(i) # Print the taxonomic rank (column name)
+  # Extract the column and get unique values
+  if (i != "ASV"){
+    unique_values <- unique(tax_table(bactps)[, i])
+    print(unique_values) # Print unique values for the rank
+  }
+}
 ##########################
+
+relab.bact <- transform_sample_counts(bactps, function(x) x / sum(x))
+relab.virps <- transform_sample_counts(virps, function(x) x / sum(x))
+
+
 ### check to make sure ASV abundances are not all zero
-# dat <- psmelt(bact_ps) # temp 
+# dat <- psmelt(virps)
 # dat %>% head()
 # # make decimal date
 # dat$decimaldat <- lubridate::decimal_date(as.Date(dat$Date))
@@ -59,8 +88,8 @@ tax_table(vir_ps) %>% head()
 # filter(howmany0 == 20) %>%
 # pull(OTU)
 
-# # seasonal niche
-# periodic <- dat %>%
+# # seasonal niche 
+# lomb_object <- dat %>%
 # filter(! OTU %in% ASVs0) %>%
 # split(.$OTU) %>%
 # map(~randlsp( x =.x$Abundance,
@@ -69,6 +98,80 @@ tax_table(vir_ps) %>% head()
 # plot = F))
 ####################
 
+
+source("bbmo_timeseries_fraction/src/sourcefiles/main_functions.R")
+psmelt.raw <- psmelt_dplyr(relab.bact) 
+psmelt.raw %>% head()
+
+all <- psmelt.raw %>% 
+  filter( Abundance > 0) %>% 
+  mutate(seasonal = case_when(
+    OTU %in% bact_szn$asv & Site == 'Littoral' ~ 'seasonal',
+    OTU %in% bact_szn$asv & Site == 'Pelagic' ~ 'seasonal',
+    TRUE ~ 'no seasonal'
+  )) %>% 
+  group_by(Site,Family,seasonal) %>% 
+  dplyr::summarize(Abundance = sum(Abundance),
+                   count = unique(Family) %>% length()) 
+all %>% head()
+
+
+all.perfect <- all %>%
+  group_by(Site, Family) %>% 
+  dplyr::mutate(relab.ab = Abundance / sum(Abundance),
+                   relab.count = count / sum(count)) %>% 
+  ungroup() %>% 
+  mutate(fraction = if_else(Site == "Littoral",
+                                   "Littoral" , "Pelagic")) #%>% 
+  # italizyce_synes()
+all.perfect %>% head()
+
+ggplot(all.perfect) +
+  geom_bar(aes( x = Family,
+                y = relab.ab, fill = seasonal), stat='identity') +
+  geom_point(data = filter(all.perfect, seasonal == "seasonal"),
+             aes( x = Family, y = relab.count, color = seasonal) ) +
+  geom_text(data = filter(all.perfect, seasonal == "seasonal"),
+            aes(x = Family, y = 1.05, label = count ),
+            size = 2.5, 
+            # color = economist_pal()(1)
+            ) + 
+  geom_hline(yintercept = 0.5, linewidth=.2, linetype="dotted", color = "grey") +
+  coord_flip() +
+  facet_wrap(~Site) +
+  scale_fill_manual(values = c('#A9D0D0', '#60ABAE'), name = "") + 
+  # scale_colour_economist() +
+  theme_minimal() +
+  # lil.strip +
+  theme( axis.text.y = ggtext::element_markdown()) + 
+  # scale_x_discrete(limits = rev(tax.order.palette)) +
+  scale_y_continuous( labels = scales::percent) + 
+  guides(color = FALSE) +
+  ylab("Relative abundance") +
+  xlab( "Taxonomy" ) 
+
+ggsave("../results/figures/timeseries/summary-seasonality-lomb.pdf",
+       width = 9, height = 7, 
+       useDingbats = FALSE)
+
+
+
+
+
+
+
+
+
+
+# Bps <- lomb_env$bact_physeq # unfiltered
+bact_ps <- lomb_env$bact3000filt
+vir_ps <- lomb_env$virps3000filt
+
+# add day of year col to metadata
+sample_data(bact_ps)$day_of_year <- as.numeric(format(as.Date(sample_data(bact_ps)$Date), format = "%j"))
+
+tax_table(bact_ps) %>% head()
+tax_table(vir_ps) %>% head()
 
 
 b.phy.relab <- transform_sample_counts(bact_ps, function(x) x / sum(x))
@@ -181,7 +284,7 @@ sea.asvs
 #######################
 # Comparison trends ASVs
 #######################
-tax_table(bact_ps) %>% head()
+tax_table(bactps) %>% head()
 
 vals <- abprevtax %>% 
   pull(Genus) %>% 
