@@ -31,37 +31,37 @@ bactps <- lomb_env$bact3000filt
 
 ##############
 # Modify taxonomy table -- simplify
-tax.raw <- bactps %>% tax_table() %>% as.data.frame() 
+# tax.raw <- bactps %>% tax_table() %>% as.data.frame() 
 
-# subset taxa
-tax.genus <- c("g__Microcystis", "g__Dolichospermum", "g__Synechococcus", "g__Fimbriimonas", "g__Pseudomonas","g__Steroidobacter", "g__Nitrospira", "g__Pseudanabaena")
+# # subset taxa
+# tax.genus <- c("g__Microcystis", "g__Dolichospermum", "g__Synechococcus", "g__Fimbriimonas", "g__Pseudomonas","g__Steroidobacter", "g__Nitrospira", "g__Pseudanabaena")
 
-# Access the taxonomy table
-# Extract the taxonomy table
-tax_table_df <- as.data.frame(tax_table(bactps))
+# # Access the taxonomy table
+# # Extract the taxonomy table
+# tax_table_df <- as.data.frame(tax_table(bactps))
 
-# Step 2: Identify taxa to keep and modify others
-tax_table_df <- tax_table_df %>%
-  mutate(
-    Kingdom = ifelse(Genus %in% tax.genus, Kingdom, "Other"),
-    Phylum = ifelse(Genus %in% tax.genus, Phylum, "Other"),
-    Class = ifelse(Genus %in% tax.genus, Class, "Other"),
-    Order = ifelse(Genus %in% tax.genus, Order, "Other"),
-    Family = ifelse(Genus %in% tax.genus, Family, "Other"),
-    Genus = ifelse(Genus %in% tax.genus, Genus, "Other")
-  )
-# Step 3: Update the taxonomy table in phyloseq object
-tax_table(bactps) <- as.matrix(tax_table_df)
+# # Step 2: Identify taxa to keep and modify others
+# tax_table_df <- tax_table_df %>%
+#   mutate(
+#     Kingdom = ifelse(Genus %in% tax.genus, Kingdom, "Other"),
+#     Phylum = ifelse(Genus %in% tax.genus, Phylum, "Other"),
+#     Class = ifelse(Genus %in% tax.genus, Class, "Other"),
+#     Order = ifelse(Genus %in% tax.genus, Order, "Other"),
+#     Family = ifelse(Genus %in% tax.genus, Family, "Other"),
+#     Genus = ifelse(Genus %in% tax.genus, Genus, "Other")
+#   )
+# # Step 3: Update the taxonomy table in phyloseq object
+# tax_table(bactps) <- as.matrix(tax_table_df)
 
-# check unique taxa
-for (i in colnames(tax_table(bactps))) {
-  print(i) # Print the taxonomic rank (column name)
-  # Extract the column and get unique values
-  if (i != "ASV"){
-    unique_values <- unique(tax_table(bactps)[, i])
-    print(unique_values) # Print unique values for the rank
-  }
-}
+# # check unique taxa
+# for (i in colnames(tax_table(bactps))) {
+#   print(i) # Print the taxonomic rank (column name)
+#   # Extract the column and get unique values
+#   if (i != "ASV"){
+#     unique_values <- unique(tax_table(bactps)[, i])
+#     print(unique_values) # Print unique values for the rank
+#   }
+# }
 ##########################
 
 relab.bact <- transform_sample_counts(bactps, function(x) x / sum(x))
@@ -110,14 +110,14 @@ all <- psmelt.raw %>%
     OTU %in% bact_szn$asv & Site == 'Pelagic' ~ 'seasonal',
     TRUE ~ 'no seasonal'
   )) %>% 
-  group_by(Site,Family,seasonal) %>% 
+  group_by(Site,Class,seasonal) %>% 
   dplyr::summarize(Abundance = sum(Abundance),
-                   count = unique(Family) %>% length()) 
+                   count = unique(Class) %>% length()) 
 all %>% head()
 
 
 all.perfect <- all %>%
-  group_by(Site, Family) %>% 
+  group_by(Site, Class) %>% 
   dplyr::mutate(relab.ab = Abundance / sum(Abundance),
                    relab.count = count / sum(count)) %>% 
   ungroup() %>% 
@@ -127,12 +127,12 @@ all.perfect <- all %>%
 all.perfect %>% head()
 
 ggplot(all.perfect) +
-  geom_bar(aes( x = Family,
+  geom_bar(aes( x = Class,
                 y = relab.ab, fill = seasonal), stat='identity') +
   geom_point(data = filter(all.perfect, seasonal == "seasonal"),
-             aes( x = Family, y = relab.count, color = seasonal) ) +
+             aes( x = Class, y = relab.count, color = seasonal) ) +
   geom_text(data = filter(all.perfect, seasonal == "seasonal"),
-            aes(x = Family, y = 1.05, label = count ),
+            aes(x = Class, y = 1.05, label = count ),
             size = 2.5, 
             # color = economist_pal()(1)
             ) + 
