@@ -54,19 +54,19 @@ bactps <- lomb_env$bact3000filt
 # tax_table(bactps) <- as.matrix(tax_table_df)
 
 # # check unique taxa
-# for (i in colnames(tax_table(bactps))) {
-#   print(i) # Print the taxonomic rank (column name)
-#   # Extract the column and get unique values
-#   if (i != "ASV"){
-#     unique_values <- unique(tax_table(bactps)[, i])
-#     print(unique_values) # Print unique values for the rank
-#   }
-# }
+for (i in colnames(tax_table(virps))) {
+  print(i) # Print the taxonomic rank (column name)
+  # Extract the column and get unique values
+  if (i != "Species"){
+    unique_values <- unique(tax_table(virps)[, i])
+    print(unique_values) # Print unique values for the rank
+  }
+}
 ##########################
 
 relab.bact <- transform_sample_counts(bactps, function(x) x / sum(x))
 relab.virps <- transform_sample_counts(virps, function(x) x / sum(x))
-
+taxa_sums(relab.virps) %>% head()
 
 ### check to make sure ASV abundances are not all zero
 # dat <- psmelt(virps)
@@ -100,63 +100,168 @@ relab.virps <- transform_sample_counts(virps, function(x) x / sum(x))
 
 
 source("bbmo_timeseries_fraction/src/sourcefiles/main_functions.R")
-psmelt.raw <- psmelt_dplyr(relab.bact) 
-psmelt.raw %>% head()
+# psmelt.raw <- psmelt_dplyr(relab.virps) 
+# psmelt.raw %>% head()
 
-all <- psmelt.raw %>% 
+# all <- psmelt.raw %>% 
+#   filter( Abundance > 0) %>% 
+#   mutate(seasonal = case_when(
+#     OTU %in% vir_szn$asv & Site == 'Littoral' ~ 'seasonal',
+#     OTU %in% vir_szn$asv & Site == 'Pelagic' ~ 'seasonal',
+#     TRUE ~ 'no seasonal'
+#   )) %>% 
+#   group_by(Site,OTU,seasonal) %>% 
+#   dplyr::summarize(Abundance = sum(Abundance),
+#                    count = unique(OTU) %>% length()) 
+# all %>% head()
+
+
+# all.perfect <- all %>%
+#   group_by(Site, OTU) %>% 
+#   dplyr::mutate(relab.ab = Abundance / sum(Abundance),
+#                    relab.count = count / sum(count)) %>% 
+#   ungroup() %>% 
+#   mutate(fraction = if_else(Site == "Littoral",
+#                                    "Littoral" , "Pelagic")) #%>% 
+#   # italizyce_synes()
+# all.perfect %>% head()
+
+# ggplot(all.perfect) +
+#   geom_bar(aes( x = OTU,
+#                 y = relab.ab, fill = seasonal), stat='identity') +
+#   geom_point(data = filter(all.perfect, seasonal == "seasonal"),
+#              aes( x = OTU, y = relab.count, color = seasonal) ) +
+#   geom_text(data = filter(all.perfect, seasonal == "seasonal"),
+#             aes(x = OTU, y = 1.05, label = count ),
+#             size = 2.5, 
+#             # color = economist_pal()(1)
+#             ) + 
+#   geom_hline(yintercept = 0.5, linewidth=.2, linetype="dotted", color = "grey") +
+#   coord_flip() +
+#   facet_wrap(~Site) +
+#   scale_fill_manual(values = c('#A9D0D0', '#60ABAE'), name = "") + 
+#   # scale_colour_economist() +
+#   theme_minimal() +
+#   # lil.strip +
+#   theme( axis.text.y = ggtext::element_markdown()) + 
+#   # scale_x_discrete(limits = rev(tax.order.palette)) +
+#   scale_y_continuous( labels = scales::percent) + 
+#   guides(color = FALSE) +
+#   ylab("Relative abundance") +
+#   xlab( "Taxonomy" ) 
+
+# ggsave("./figs250109/summary-seasonality-lomb-bact.png",
+#        width = 9, height = 7)
+
+
+#### Distributino along year
+sea.asvs <- unique(vir_szn$asv)
+taxV <- as(tax_table(virps), 'matrix') %>% as_tibble(rownames = 'asv')
+
+sea.category <-  data.frame( asv = taxV$asv) %>% 
+  mutate( seasonal = case_when( asv %in% sea.asvs ~ 'seasonal',
+                                TRUE ~ 'no seasonal' ), 
+          seasonal.type = case_when(
+            asv %in% vir_szn$asv ~ 'seasonal',
+            TRUE ~ 'no seasonal'),
+          seasonal.type = factor(seasonal.type, 
+                                 levels = c('seasonal',
+                                            'no seasonal'))
+  ) 
+
+psmelt.relab <- psmelt_dplyr(relab.virps) 
+
+psmelt.relab %>% 
+  left_join(sea.category, by = c('OTU' = 'asv')) %>% 
+  group_by(Site, Sample, Month, seasonal.type
+    ) %>% 
+  summarize(relab = sum(Abundance)) %>% 
+  ggplot( aes(Month, relab, color = seasonal.type
+    )
+  ) + 
+  geom_boxplot(aes(fill = seasonal.type), 
+               position = position_dodge(width = 0.7),
+               alpha = 0.7, outlier.colour = 'transparent') + 
+  geom_point(position= position_dodge(width = 0.7))  + 
+  facet_wrap(~ str_c('Site ', Site), ncol = 1) + 
+  # lil.strip + 
+  # scale_x_month + 
+  # scale_fill_pander() + 
+  # scale_color_pander() + 
+  scale_y_continuous(labels = scales::percent, name = 'Relative abundance (%)')
+
+ggsave('./figs250109/vir_str_typeseasonality.png',
+       width = 9, height = 6)
+
+
+# Occurence
+psmelt.relab %>% 
+  left_join(sea.category, by = c('OTU' = 'asv')) %>% 
   filter( Abundance > 0) %>% 
-  mutate(seasonal = case_when(
-    OTU %in% bact_szn$asv & Site == 'Littoral' ~ 'seasonal',
-    OTU %in% bact_szn$asv & Site == 'Pelagic' ~ 'seasonal',
-    TRUE ~ 'no seasonal'
-  )) %>% 
-  group_by(Site,Class,seasonal) %>% 
-  dplyr::summarize(Abundance = sum(Abundance),
-                   count = unique(Class) %>% length()) 
-all %>% head()
+  group_by(Site, Sample, Month,  seasonal.type) %>% 
+  summarize(count = n()) %>% 
+  ggplot( aes(Month, count, color = seasonal.type)) + 
+  geom_boxplot(aes(fill = seasonal.type), 
+               position = position_dodge(width = 0.7),
+               alpha = 0.7, outlier.colour = 'transparent') + 
+  geom_point(position= position_dodge(width = 0.7))  + 
+  facet_wrap(~ str_c('Site ', Site), ncol = 1) + 
+  # lil.strip + 
+  # scale_x_month + 
+  # scale_fill_pander() + 
+  # scale_color_pander() + 
+  ylab('Ocurrence (n. ASVs)')
+ggsave('./figs250109/vir_nOccurence_typeseasonal.png',
+       width = 9, height = 6)
 
+# Polar plot
+polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
+  
+  df %>% 
+  ggplot( aes_string("Month", yaxis)) + 
+  geom_vline(data =  data.frame( values = seq(0.5, 12.5, by = 1)),
+             aes(xintercept = values), color = 'gray') + 
+  geom_jitter(aes_string(fill = "OTU", shape = shape),
+              size = 2.4,
+              width = 0.3)  +
+  coord_polar(theta = 'x', start = 12.3) + 
+  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
+  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  # lil.strip + 
+  # bac.fillScale +
+  # scale_x_month + 
+  cowplot::theme_minimal_hgrid() 
+}
 
-all.perfect <- all %>%
-  group_by(Site, Class) %>% 
-  dplyr::mutate(relab.ab = Abundance / sum(Abundance),
-                   relab.count = count / sum(count)) %>% 
-  ungroup() %>% 
-  mutate(fraction = if_else(Site == "Littoral",
-                                   "Littoral" , "Pelagic")) #%>% 
-  # italizyce_synes()
-all.perfect %>% head()
+# power.lomb <- bind_rows(
+#   list( `0.2` = lomb_filt, 
+#         `3` =  lomb_filt),
+#   .id = 'Site')
 
-ggplot(all.perfect) +
-  geom_bar(aes( x = Class,
-                y = relab.ab, fill = seasonal), stat='identity') +
-  geom_point(data = filter(all.perfect, seasonal == "seasonal"),
-             aes( x = Class, y = relab.count, color = seasonal) ) +
-  geom_text(data = filter(all.perfect, seasonal == "seasonal"),
-            aes(x = Class, y = 1.05, label = count ),
-            size = 2.5, 
-            # color = economist_pal()(1)
-            ) + 
-  geom_hline(yintercept = 0.5, linewidth=.2, linetype="dotted", color = "grey") +
-  coord_flip() +
-  facet_wrap(~Site) +
-  scale_fill_manual(values = c('#A9D0D0', '#60ABAE'), name = "") + 
-  # scale_colour_economist() +
-  theme_minimal() +
-  # lil.strip +
-  theme( axis.text.y = ggtext::element_markdown()) + 
-  # scale_x_discrete(limits = rev(tax.order.palette)) +
-  scale_y_continuous( labels = scales::percent) + 
-  guides(color = FALSE) +
-  ylab("Relative abundance") +
-  xlab( "Taxonomy" ) 
+maxima.median <- psmelt.relab %>% 
+  left_join(sea.category, by = c('OTU' = 'asv')) %>% 
+  group_by(Site,OTU, Month) %>% 
+  summarize(median.relab = median(Abundance)) %>% 
+  group_by(Site,OTU) %>% 
+  filter(median.relab == max(median.relab)) %>% 
+  arrange(OTU)
 
-ggsave("../results/figures/timeseries/summary-seasonality-lomb.pdf",
-       width = 9, height = 7, 
-       useDingbats = FALSE)
+szn_vir_lomb <- left_join(maxima.median, lomb_filt, 
+          by = c('OTU' = 'asv')) %>% 
+  left_join(sea.category, by = c('OTU' = 'asv')) %>% 
+  select(Site, OTU, Month, peak, seasonal.type) %>% 
+  left_join(taxV, by = c('OTU' = 'asv'))  
+  # italizyce_synes() %>% 
 
+szn_vir_lomb %>% 
+  polar_plot(shape = "seasonal.type") + 
+  ylab('Strength recurrence') + 
+  facet_wrap(~Site, ncol = 2)  + 
+  # italics.strip.legend + 
+  scale_shape_manual(values = 21:25) +
+  theme(legend.position = "none")
 
-
-
+ggsave('./figs250109/polar_plot_general.png', width = 9, height = 9)
 
 
 
