@@ -222,11 +222,12 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
   geom_vline(data =  data.frame( values = seq(0.5, 12.5, by = 1)),
              aes(xintercept = values), color = 'gray') + 
   geom_jitter(aes_string(fill = "OTU", shape = shape),
-              size = 2.4,
+              size = 2.5,
               width = 0.3)  +
   coord_polar(theta = 'x', start = 12.3) + 
   guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
-  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  guides( shape = guide_legend( override.aes = list(size = 3))) + 
+  theme(legend.position = 'bottom') +
   # lil.strip + 
   # bac.fillScale +
   # scale_x_month + 
@@ -240,28 +241,31 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
 
 maxima.median <- psmelt.relab %>% 
   left_join(sea.category, by = c('OTU' = 'asv')) %>% 
-  group_by(Site,OTU, Month) %>% 
+  group_by(Years,OTU, Month) %>% 
   summarize(median.relab = median(Abundance)) %>% 
-  group_by(Site,OTU) %>% 
+  group_by(Years,OTU) %>% 
   filter(median.relab == max(median.relab)) %>% 
   arrange(OTU)
 
 szn_vir_lomb <- left_join(maxima.median, lomb_filt, 
           by = c('OTU' = 'asv')) %>% 
   left_join(sea.category, by = c('OTU' = 'asv')) %>% 
-  select(Site, OTU, Month, peak, seasonal.type) %>% 
+  select(Years, OTU, Month, peak, seasonal.type) %>% 
   left_join(taxV, by = c('OTU' = 'asv'))  
   # italizyce_synes() %>% 
+
 
 szn_vir_lomb %>% 
   polar_plot(shape = "seasonal.type") + 
   ylab('Strength recurrence') + 
-  facet_wrap(~Site, ncol = 2)  + 
-  # italics.strip.legend + 
-  scale_shape_manual(values = 21:25) +
-  theme(legend.position = "none")
+  facet_wrap(~Years, ncol = 5) + 
+  theme(legend.position = 'none') +
+  guides(
+    colour = guide_legend(nrow = 100, byrow = TRUE),
+    fill = guide_legend(nrow = 100, byrow = TRUE)
+  )
 
-ggsave('./figs250109/polar_plot_general.png', width = 9, height = 9)
+ggsave('./figs250109/polar_plot_years_w_legend.pdf', width = 9, height = 9)
 
 
 
