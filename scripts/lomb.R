@@ -17,13 +17,14 @@ bact_szn %>% head()
 ############################
 # load from backup -- faster -- use if only need phyloseq data
 lomb_env <- new.env() # Create a new environment
-load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
+# load("arxiv/Large_data/lomb backup.RData", envir = lomb_env) # Load the file into the new environment
+load("lomb2025.RData", envir = lomb_env) # Load the file into the new environment
 ls(lomb_env)  # List the variables in the new environment
+### lomb.sea.02V is the filtered output
+### lomb.02v is the unfiltered output of lomb
 
-# load from backup -- slower but needed for modularity info
-# lomb_env <- new.env() # Create a new environment
-# load("arxiv/Large_data/Spieceasi.RData", envir = lomb_env) # Load the file into the new environment
-# ls(lomb_env)  # List the variables in the new environment
+lomb_filt <- lomb_env$lomb.sea.02V
+dplyr::glimpse(lomb_filt) # compact view of data
 
 
 # Bps <- lomb_env$bact_physeq # unfiltered
@@ -33,9 +34,42 @@ vir_ps <- lomb_env$virps3000filt
 # add day of year col to metadata
 sample_data(bact_ps)$day_of_year <- as.numeric(format(as.Date(sample_data(bact_ps)$Date), format = "%j"))
 
-
 tax_table(bact_ps) %>% head()
 tax_table(vir_ps) %>% head()
+
+
+##########################
+### check to make sure ASV abundances are not all zero
+# dat <- psmelt(bact_ps) # temp 
+# dat %>% head()
+# # make decimal date
+# dat$decimaldat <- lubridate::decimal_date(as.Date(dat$Date))
+
+# dat$OTU %>% head()
+# dat %>% select(OTU, decimaldat, Abundance) %>%
+# group_by(OTU) %>%
+# summarize( howmany0 = sum(Abundance == 0)) %>%
+# arrange(-howmany0)
+
+# ASVs0 <- dat %>%
+# select(OTU, decimaldat, Abundance) %>%
+# group_by(OTU) %>%
+# summarize( howmany0 = sum(Abundance == 0)) %>%
+# arrange(-howmany0) %>%
+# filter(howmany0 == 20) %>%
+# pull(OTU)
+
+# # seasonal niche
+# periodic <- dat %>%
+# filter(! OTU %in% ASVs0) %>%
+# split(.$OTU) %>%
+# map(~randlsp( x =.x$Abundance,
+# times = .x$decimaldat,
+# type = 'period',
+# plot = F))
+####################
+
+
 
 b.phy.relab <- transform_sample_counts(bact_ps, function(x) x / sum(x))
 taxa_sums(b.phy.relab) %>% head()
