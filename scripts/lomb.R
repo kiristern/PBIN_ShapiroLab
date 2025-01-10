@@ -6,6 +6,10 @@ library(lubridate)
 library(lomb)
 library(ggplot2)
 
+# for plotting
+lil.strip <- theme(strip.background = element_blank(),
+                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+
 # load seasonal data from nico
 bact_szn <- read.csv("lomb_seasonality_bact.csv")
 vir_szn <- read.csv("lomb_seasonality_virus.csv")
@@ -184,7 +188,7 @@ psmelt.relab %>%
                alpha = 0.7, outlier.colour = 'transparent') + 
   geom_point(position= position_dodge(width = 0.7))  + 
   facet_wrap(~ str_c('Site ', Site), ncol = 1) + 
-  # lil.strip + 
+  lil.strip + 
   # scale_x_month + 
   # scale_fill_pander() + 
   # scale_color_pander() + 
@@ -206,7 +210,7 @@ psmelt.relab %>%
                alpha = 0.7, outlier.colour = 'transparent') + 
   geom_point(position= position_dodge(width = 0.7))  + 
   facet_wrap(~ str_c('Site ', Site), ncol = 1) + 
-  # lil.strip + 
+  lil.strip + 
   # scale_x_month + 
   # scale_fill_pander() + 
   # scale_color_pander() + 
@@ -215,7 +219,8 @@ ggsave('./figs250109/vir_nOccurence_typeseasonal.png',
        width = 9, height = 6)
 
 # Polar plot
-polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
+source("bbmo_timeseries_fraction/src/sourcefiles/backbone_params-graphs.R")
+polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
   
   df %>% 
   ggplot( aes_string("Month", yaxis)) + 
@@ -227,9 +232,8 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
   coord_polar(theta = 'x', start = 12.3) + 
   guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
   guides( shape = guide_legend( override.aes = list(size = 3)))  + 
-  # lil.strip + 
-  # bac.fillScale +
-  # scale_x_month + 
+  lil.strip + 
+  scale_x_month + 
   cowplot::theme_minimal_hgrid() 
 
 }
@@ -248,11 +252,7 @@ maxima.median <- psmelt.relab %>%
   arrange(OTU)
 summary(maxima.median)
 
-# get top peak ASVs 
-lomb_peaks <- lomb_filt %>% 
-  group_by(asv) %>% 
-  filter(peak >= 15) %>% 
-  arrange(asv)
+
 
 # df.ts <- psmelt.relab %>% 
 #   arrange(Date) %>% 
@@ -295,7 +295,11 @@ map(results.lomb, ~tibble( scanned = .x$scanned,
 
 
 
-
+# get top peak ASVs 
+lomb_peaks <- lomb_filt %>% 
+  group_by(asv) %>% 
+  filter(peak >= 15) %>% 
+  arrange(asv)
 
 
 szn_vir_lomb <- left_join(maxima.median, lomb_peaks, 
@@ -308,15 +312,29 @@ szn_vir_lomb <- left_join(maxima.median, lomb_peaks,
 
 szn_vir_lomb %>% 
   polar_plot(shape = "seasonal.type") + 
-  ylab('Strength recurrence') + facet_wrap(~Years, ncol = 5)+
-  theme(legend.position = 'bottom')+
-  guides(
-    colour = guide_legend(nrow = 100, byrow = TRUE),
-    fill = guide_legend(nrow = 100, byrow = TRUE)
-  )
+  ylab('Strength recurrence') + 
+  facet_wrap(~Years, ncol = 5)  + 
+  # italics.strip.legend + 
+  scale_shape_manual(values = 21:25) + 
+  theme(
+    axis.text.y.left = element_text(size = 13),
+    axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1, margin = margin(l=10, r=10, t=0, b=0)),
+    axis.title.y = element_text(size = 13),
+    title = element_text(size = 12),
+    legend.position = 'bottom',
+  ) + guides( # plot legend at bottom in 2 rows
+            colour=guide_legend(
+                                nrow=10,
+                                byrow=TRUE,
+                              ),
+            fill=guide_legend(
+                                nrow=10,
+                                byrow=TRUE,
+                              )
+)
+  # ggtitle("Top 20 - Littoral")
 
-
-ggsave('./figs250109/polar_plot_years_w_legend.pdf', width = 9, height = 9)
+ggsave('./figs250109/polar_plot_years_wo_legend.pdf', width = 9, height = 9)
 
 
 
@@ -376,9 +394,7 @@ abprevtax %>% filter(behavior == 'Broad') %>% pull(Class) %>% table()
 
 
 #######################
-# # plotting
-lil.strip <- theme(strip.background = element_blank(),
-                   strip.text.x =element_text(margin = margin(.05, 0, .1, 0, "cm")))
+
 
 geoMean = function(x, na.rm=TRUE){
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
