@@ -222,16 +222,16 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Site', link = 'OTU'){
   geom_vline(data =  data.frame( values = seq(0.5, 12.5, by = 1)),
              aes(xintercept = values), color = 'gray') + 
   geom_jitter(aes_string(fill = "OTU", shape = shape),
-              size = 2.5,
+              size = 2.4,
               width = 0.3)  +
   coord_polar(theta = 'x', start = 12.3) + 
   guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
-  guides( shape = guide_legend( override.aes = list(size = 3))) + 
-  theme(legend.position = 'bottom') +
+  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
   # lil.strip + 
   # bac.fillScale +
   # scale_x_month + 
   cowplot::theme_minimal_hgrid() 
+
 }
 
 # power.lomb <- bind_rows(
@@ -246,8 +246,59 @@ maxima.median <- psmelt.relab %>%
   group_by(Years,OTU) %>% 
   filter(median.relab == max(median.relab)) %>% 
   arrange(OTU)
+summary(maxima.median)
 
-szn_vir_lomb <- left_join(maxima.median, lomb_filt, 
+# get top peak ASVs 
+lomb_peaks <- lomb_filt %>% 
+  group_by(asv) %>% 
+  filter(peak >= 15) %>% 
+  arrange(asv)
+
+# df.ts <- psmelt.relab %>% 
+#   arrange(Date) %>% 
+#   mutate(decimaldat = lubridate::decimal_date(as.Date(Date))) %>%
+#   select(decimaldat, Abundance, OTU) %>% 
+#   split(.$OTU, drop = T)
+
+# lomb_vir <- df.ts %>%
+#   map(~randlsp( x =.x$Abundance,
+#                 times = .x$decimaldat,
+#                 type = 'period',
+#                 plot = F))
+
+# load from saved
+lomb.vir <- lomb_env$lomb.02 # unfiltered
+lomb.vir %>% dplyr::glimpse() # compact view of data
+
+lomb.sea.vir <- tibble( asv = names(lomb.vir),
+                      pval = map_dbl(lomb.vir, ~.x$p.value), 
+                      peak = map_dbl(lomb.vir, ~.x$peak),
+                      interval  = map(lomb.vir, ~.x$peak.at) ) %>% 
+  filter(pval <= 0.01, peak >= 10)   %>% 
+  pull(asv)
+
+results.lomb <- lomb.vir[lomb.sea.vir]
+results.lomb %>% dplyr::glimpse() # compact view of data
+
+map(results.lomb, ~tibble( scanned = .x$scanned,
+                          power = .x$power)) %>% 
+  bind_rows(.id = 'asv') %>% 
+  ggplot(aes(scanned, power)) + 
+  geom_line(aes(group = asv)) + 
+  facet_wrap(~asv) + 
+  theme_bw(base_size = 10)
+
+
+
+
+
+
+
+
+
+
+
+szn_vir_lomb <- left_join(maxima.median, lomb_peaks, 
           by = c('OTU' = 'asv')) %>% 
   left_join(sea.category, by = c('OTU' = 'asv')) %>% 
   select(Years, OTU, Month, peak, seasonal.type) %>% 
@@ -257,13 +308,13 @@ szn_vir_lomb <- left_join(maxima.median, lomb_filt,
 
 szn_vir_lomb %>% 
   polar_plot(shape = "seasonal.type") + 
-  ylab('Strength recurrence') + 
-  facet_wrap(~Years, ncol = 5) + 
-  theme(legend.position = 'none') +
+  ylab('Strength recurrence') + facet_wrap(~Years, ncol = 5)+
+  theme(legend.position = 'bottom')+
   guides(
     colour = guide_legend(nrow = 100, byrow = TRUE),
     fill = guide_legend(nrow = 100, byrow = TRUE)
   )
+
 
 ggsave('./figs250109/polar_plot_years_w_legend.pdf', width = 9, height = 9)
 
