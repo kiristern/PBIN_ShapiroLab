@@ -302,11 +302,7 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
   geom_jitter(aes_string(fill = "OTU", shape = shape),
               size = 2.4,
               width = 0.3)  +
-  coord_polar(theta = 'x', start = 12.3) + 
-  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
-                                ncol=36,
-                                byrow=TRUE,))  + 
-  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  coord_polar(theta = 'x', start = 12.3) +
   lil.strip + 
   scale_x_month + 
   cowplot::theme_minimal_hgrid() 
@@ -325,7 +321,12 @@ szn_vir_lomb %>%
     axis.title.y = element_text(size = 13),
     title = element_text(size = 12),
     legend.position = 'bottom',
-  ) + guides( # plot legend at bottom in 2 rows
+  ) + 
+  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
+                                ncol=36,
+                                byrow=TRUE,))  + 
+  # guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  guides( # plot legend at bottom in 2 rows
             colour=guide_legend(
                                 ncol=36,
                                 byrow=TRUE,
@@ -334,7 +335,68 @@ szn_vir_lomb %>%
 )
   # ggtitle("Top 20 - Littoral")
 
-ggsave('./figs250109/polar_plt_years_vir.png', width = 9, height = 9)
+ggsave('./figs250110/polar_lomb_OTU_vir.png', 
+  width = 9, height = 15
+)
+
+
+
+data.frame( values = seq(0.5, 12.5, by = 1))
+
+polardatafinal <- left_join(maxima.median, lomb_peaks, 
+          by = c('OTU' = 'asv')) %>% 
+  left_join(sea.category, by = c('OTU' = 'asv')) %>% 
+  select(Years, OTU, Month, peak, seasonal.type) %>% 
+  left_join(taxV, by = c('OTU' = 'asv')) %>% 
+  # filter(seasonal.type != 'no seasonal') %>% 
+  # mutate(Site = ifelse( Site ==  'Littoral', 'Littoral time series', 'Pelagic time series')) %>%
+  filter(!is.na(peak)) 
+
+polardatafinal %>% 
+  polar_plot(shape = "seasonal.type") + 
+  facet_wrap(~Years + seasonal.type , ncol = 5)  + 
+  ylab('Strength recurrence') + 
+  scale_y_continuous( limits = c(0,30)) + 
+  scale_shape_manual(values = 21:25, name = "Seasonality") +
+  theme(
+    axis.text.y.left = element_text(size = 13),
+    axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1, margin = margin(l=10, r=10, t=0, b=0)),
+    axis.title.y = element_text(size = 13),
+    title = element_text(size = 12),
+    legend.position = 'bottom',
+  )+ 
+  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
+                                ncol=20,
+                                byrow=TRUE,))  + 
+  # guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+   guides( # plot legend at bottom in 2 rows
+            colour=guide_legend(
+                                ncol=20,
+                                byrow=TRUE,
+                              ),
+            shape = "none"
+)
+ggsave('./figs250110/polar_lomb_seasonality_vir.png', 
+  width = 9, height = 15
+)
+
+
+
+
+
+######################
+# heatmap
+
+
+
+
+
+
+
+
+
+
+
 
 
 
