@@ -218,25 +218,7 @@ psmelt.relab %>%
 ggsave('./figs250109/vir_nOccurence_typeseasonal.png',
        width = 9, height = 6)
 
-# Polar plot
-source("bbmo_timeseries_fraction/src/sourcefiles/backbone_params-graphs.R")
-polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
-  
-  df %>% 
-  ggplot( aes_string("Month", yaxis)) + 
-  geom_vline(data =  data.frame( values = seq(0.5, 12.5, by = 1)),
-             aes(xintercept = values), color = 'gray') + 
-  geom_jitter(aes_string(fill = "OTU", shape = shape),
-              size = 2.4,
-              width = 0.3)  +
-  coord_polar(theta = 'x', start = 12.3) + 
-  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
-  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
-  lil.strip + 
-  scale_x_month + 
-  cowplot::theme_minimal_hgrid() 
 
-}
 
 # power.lomb <- bind_rows(
 #   list( `0.2` = lomb_filt, 
@@ -310,6 +292,28 @@ szn_vir_lomb <- left_join(maxima.median, lomb_peaks,
   # italizyce_synes() %>% 
 
 
+
+# Polar plot
+source("bbmo_timeseries_fraction/src/sourcefiles/backbone_params-graphs.R")
+polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
+  
+  df %>% 
+  ggplot( aes_string("Month", yaxis)) + 
+  geom_vline(data =  data.frame( values = seq(0.5, 12.5, by = 1)),
+             aes(xintercept = values), color = 'gray') + 
+  geom_jitter(aes_string(fill = "OTU", shape = shape),
+              size = 2.4,
+              width = 0.3)  +
+  coord_polar(theta = 'x', start = 12.3) + 
+  theme(legend.position = 'bottom') +
+  # guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
+  # guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  lil.strip + 
+  scale_x_month + 
+  cowplot::theme_minimal_hgrid() 
+
+}
+
 szn_vir_lomb %>% 
   polar_plot(shape = "seasonal.type") + 
   ylab('Strength recurrence') + 
@@ -321,16 +325,18 @@ szn_vir_lomb %>%
     axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1, margin = margin(l=10, r=10, t=0, b=0)),
     axis.title.y = element_text(size = 13),
     title = element_text(size = 12),
-    legend.position = 'bottom',
-  ) + guides( # plot legend at bottom in 2 rows
-            colour=guide_legend(
-                                nrow=10,
-                                byrow=TRUE,
-                              ),
-            fill=guide_legend(
-                                nrow=10,
-                                byrow=TRUE,
+    # legend.position = 'bottom') +
+  )+
+  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
+                              nrow=100,
                               )
+        )  + 
+  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  guides( # plot legend at bottom in n_rows
+          colour=guide_legend(
+                              nrows=100,
+                              byrow=FALSE,
+                            ),
 )
   # ggtitle("Top 20 - Littoral")
 
