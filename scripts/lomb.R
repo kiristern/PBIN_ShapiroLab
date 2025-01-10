@@ -366,18 +366,18 @@ polardatafinal %>%
     legend.position = 'bottom',
   )+ 
   guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
-                                ncol=20,
+                                ncol=15,
                                 byrow=TRUE,))  + 
   # guides( shape = guide_legend( override.aes = list(size = 3)))  + 
    guides( # plot legend at bottom in 2 rows
             colour=guide_legend(
-                                ncol=20,
+                                ncol=15,
                                 byrow=TRUE,
                               ),
             shape = "none"
 )
-ggsave('./figs250110/polar_lomb_seasonality_vir.png', 
-  width = 9, height = 15
+ggsave('./figs250110/polar_lomb_seasonality_vir_compact.png', 
+  width = 20, height = 10
 )
 
 
