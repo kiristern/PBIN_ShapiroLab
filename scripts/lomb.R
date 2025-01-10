@@ -31,7 +31,7 @@ lomb_filt <- lomb_env$lomb.sea.02V
 dplyr::glimpse(lomb_filt) # compact view of data
 
 virps <- lomb_env$virps3000filt
-bactps <- lomb_env$bact3000filt
+# bactps <- lomb_env$bact3000filt
 
 ##############
 # Modify taxonomy table -- simplify
@@ -68,7 +68,7 @@ for (i in colnames(tax_table(virps))) {
 }
 ##########################
 
-relab.bact <- transform_sample_counts(bactps, function(x) x / sum(x))
+# relab.bact <- transform_sample_counts(bactps, function(x) x / sum(x))
 relab.virps <- transform_sample_counts(virps, function(x) x / sum(x))
 taxa_sums(relab.virps) %>% head()
 
@@ -269,8 +269,19 @@ map(results.lomb, ~tibble( scanned = .x$scanned,
   facet_wrap(~asv) + 
   theme_bw(base_size = 10)
 
+lomb_filt
+# which has highest seasonality
+lomb_filt %>% 
+  left_join(taxV, by = 'asv') %>%
+  # group_by(genus) %>% 
+  filter(n() >=3) %>%
+  summarize(count = n(),
+            mean.peak = mean(peak)) %>% 
+  arrange(-mean.peak) 
 
-
+sea.top.asv.peaks <- lomb_filt %>% 
+  left_join(taxV, by = 'asv') %>% 
+  arrange(-peak)
 
 
 
@@ -423,83 +434,45 @@ temp.colors <- list(season = mon.colr,
 matrix.asv <- otu_table(relab.virps) # should be ASV as rows and Samples in cols
 
 # filter for peak seasonal only
-matrix.asv <- matrix.asv[rownames(matrix.asv) %in% lomb_peaks$asv]
+# get top peak ASVs 
+lomb_peaks <- lomb_filt %>% 
+  group_by(asv) %>% 
+  filter(peak >= 15) %>% 
+  arrange(asv)
 
-rownames(matrix.asv)
+top.matrix.asv <- matrix.asv[rownames(matrix.asv) %in% lomb_peaks$asv]
+
+rownames(top.matrix.asv)
 rownames(env)
 library(pheatmap)
 
-# Filter matrix.asv to remove rows with fewer than 20% non-zero values
-threshold <- 0.5 * ncol(matrix.asv) # Calculate the minimum number of non-zero values
-top.matrix.asv <- matrix.asv[rowSums(matrix.asv > 0) >= threshold, ]
-
-# Add gaps for each year
-# Assuming 'Year' is in the `env` dataframe and rows correspond to columns in `matrix.asv`
-# env <- env[order(env$Year), ] # Ensure samples are ordered by Year
-top.matrix.asv <- top.matrix.asv[, order(rownames(env))] # Match the order of samples in the matrix
+# Match the order of samples in the matrix
+top.matrix.asv <- top.matrix.asv[, order(rownames(env))] 
+# Add gaps between years
 gaps_col <- cumsum(table(env$Years))
 
 # Plot heatmap with pheatmap
 pheatmap(
-  matrix.asv,
-  annotation_col = env,             # Samples as rows with `Period` or other metadata
-  annotation_row = taxV,            # ASVs as rows with `Family` in column 1
-  labels_row = toupper(rownames(matrix.asv)), # Uppercase row labels
+  top.matrix.asv, # should be ASV as rows and Samples in cols
+  annotation_col = env, # should be samples as rows with Period in col1
+  annotation_row = taxV, # should be ASV in index and Family in col1
+  labels_row = toupper(rownames(top.matrix.asv)), # Uppercase row labels
   cutree_rows = 3,                  # Cluster ASVs into 3 groups
-  cutree_cols = 10,                  # Cluster columns (Years) into n_years in dataset
-  annotation_colors = temp.colors,  # Annotation colors
+  annotation_colors = temp.colors,  
   cluster_rows = TRUE,              # Enable clustering for rows
   cluster_cols = FALSE,             # Disable clustering for columns
   show_colnames = FALSE,            # Hide column names
   gaps_col = gaps_col,               # Add gaps between years
-  filename = paste0('figs250110/heatmap_relab_vir.pdf') # Save the plot (optional)
+  na_col='grey70',                  # Color for missing values
+  scale="none",                      # Scale "row" | "column"| "none"
+  # filename = paste0('figs250110/heatmap_seasonal_vir.pdf') # Save the plot
 )
 
 
 
 
 
-pheatmap(matrix.asv, # should be ASV as rows and Samples in cols
-         annotation_col = env, # should be samples as rows with Period in col1
-         annotation_row = taxV, # should be ASV in index and Family in col1
-         labels_row = rownames(matrix.asv), #%>% str_to_upper(),
-         cutree_rows = 3,
-         cutree_cols = 8, # number of years in dataset
-         annotation_colors = temp.colors, 
-        #  cellheight = 9, cellwidth = 9,
-         cluster_rows = T, 
-         cluster_cols = F,
-         show_colnames=F,
-        #  filename = str_c(figpath, '/heatmap_clr.pdf')
-         )
-
-
-nrow(t(otu_table(subset_taxa(relab.virps, Family == "f__Myoviridae"))))
-nrow(env)
-nrow(taxV)
-
-pheatmap(t(otu_table(subset_taxa(relab.virps, Family == "f__Myoviridae"))),
-        #  annotation_col = env,
-        #  annotation_row = taxV,
-         # cutree_rows = k2,
-         annotation_colors = temp.colors, 
-         cellheight = 7, cellwidth = 7,
-         cluster_rows = T, 
-         cluster_cols = F,
-        #  filename = str_c(figpath, '/heatmap_flavos_clr.pdf')
-         )
-
-
-
-
-
-
-
-
-
-
-
-
+###########################################
 
 
 
