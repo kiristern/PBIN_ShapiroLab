@@ -381,11 +381,113 @@ ggsave('./figs250110/polar_lomb_seasonality_vir_compact.png',
 )
 
 
-
-
-
 ######################
 # heatmap
+month.order = c('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+
+mon.colr <- c(ggthemes::hc_pal()(10)[-5],
+              "#d11919","#B37400","#4C4F8B")
+
+env <- sample_data(relab.virps) %>% data.frame() %>% 
+  select(Month, Years)  %>% 
+  rownames_to_column() %>% 
+  mutate(Month = factor(Month, levels = month.order)) %>% 
+  column_to_rownames( )
+
+# we will put the family 
+taxV <- as(tax_table(relab.virps), 'matrix') %>% as_tibble(rownames = 'asv')  %>% 
+  mutate(Family = forcats::fct_lump(Family, n = 1, other_level="Other")) %>% 
+  # mutate(genus = fct_lump(genus, n = 7)) %>% 
+  select(asv, Family)  %>% 
+  # mutate( family = ifelse(family %in% fams.italy,
+  #                         bquote(italic(.(family))),
+  #                         family)) %>% 
+  column_to_rownames(var = 'asv') 
+taxV %>% head() # should be ASV in index and Family in col1
+
+family.pal <- ggthemes::ptol_pal()(1)
+names(family.pal) <- taxV$Family %>% levels()
+
+# and the genus 
+
+# gen.pal <- paletteer_c("scico::tokyo", n = 8)
+# names(gen.pal) <- tax$genus %>% levels()
+
+names(mon.colr) <- month.order
+temp.colors <- list(season = mon.colr,
+                    family = family.pal
+                    )
+                    # genus = gen.pal)
+
+
+matrix.asv <- otu_table(relab.virps) # should be ASV as rows and Samples in cols
+
+# filter for peak seasonal only
+matrix.asv <- matrix.asv[rownames(matrix.asv) %in% lomb_peaks$asv]
+
+rownames(matrix.asv)
+rownames(env)
+library(pheatmap)
+
+# Filter matrix.asv to remove rows with fewer than 20% non-zero values
+threshold <- 0.5 * ncol(matrix.asv) # Calculate the minimum number of non-zero values
+top.matrix.asv <- matrix.asv[rowSums(matrix.asv > 0) >= threshold, ]
+
+# Add gaps for each year
+# Assuming 'Year' is in the `env` dataframe and rows correspond to columns in `matrix.asv`
+# env <- env[order(env$Year), ] # Ensure samples are ordered by Year
+top.matrix.asv <- top.matrix.asv[, order(rownames(env))] # Match the order of samples in the matrix
+gaps_col <- cumsum(table(env$Years))
+
+# Plot heatmap with pheatmap
+pheatmap(
+  matrix.asv,
+  annotation_col = env,             # Samples as rows with `Period` or other metadata
+  annotation_row = taxV,            # ASVs as rows with `Family` in column 1
+  labels_row = toupper(rownames(matrix.asv)), # Uppercase row labels
+  cutree_rows = 3,                  # Cluster ASVs into 3 groups
+  cutree_cols = 10,                  # Cluster columns (Years) into n_years in dataset
+  annotation_colors = temp.colors,  # Annotation colors
+  cluster_rows = TRUE,              # Enable clustering for rows
+  cluster_cols = FALSE,             # Disable clustering for columns
+  show_colnames = FALSE,            # Hide column names
+  gaps_col = gaps_col,               # Add gaps between years
+  filename = paste0('figs250110/heatmap_relab_vir.pdf') # Save the plot (optional)
+)
+
+
+
+
+
+pheatmap(matrix.asv, # should be ASV as rows and Samples in cols
+         annotation_col = env, # should be samples as rows with Period in col1
+         annotation_row = taxV, # should be ASV in index and Family in col1
+         labels_row = rownames(matrix.asv), #%>% str_to_upper(),
+         cutree_rows = 3,
+         cutree_cols = 8, # number of years in dataset
+         annotation_colors = temp.colors, 
+        #  cellheight = 9, cellwidth = 9,
+         cluster_rows = T, 
+         cluster_cols = F,
+         show_colnames=F,
+        #  filename = str_c(figpath, '/heatmap_clr.pdf')
+         )
+
+
+nrow(t(otu_table(subset_taxa(relab.virps, Family == "f__Myoviridae"))))
+nrow(env)
+nrow(taxV)
+
+pheatmap(t(otu_table(subset_taxa(relab.virps, Family == "f__Myoviridae"))),
+        #  annotation_col = env,
+        #  annotation_row = taxV,
+         # cutree_rows = k2,
+         annotation_colors = temp.colors, 
+         cellheight = 7, cellwidth = 7,
+         cluster_rows = T, 
+         cluster_cols = F,
+        #  filename = str_c(figpath, '/heatmap_flavos_clr.pdf')
+         )
 
 
 
