@@ -219,7 +219,6 @@ ggsave('./figs250109/vir_nOccurence_typeseasonal.png',
        width = 9, height = 6)
 
 
-
 # power.lomb <- bind_rows(
 #   list( `0.2` = lomb_filt, 
 #         `3` =  lomb_filt),
@@ -292,7 +291,6 @@ szn_vir_lomb <- left_join(maxima.median, lomb_peaks,
   # italizyce_synes() %>% 
 
 
-
 # Polar plot
 source("bbmo_timeseries_fraction/src/sourcefiles/backbone_params-graphs.R")
 polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
@@ -305,9 +303,10 @@ polar_plot <- function(df, yaxis = 'peak', shape = 'Years', link = 'OTU'){
               size = 2.4,
               width = 0.3)  +
   coord_polar(theta = 'x', start = 12.3) + 
-  theme(legend.position = 'bottom') +
-  # guides( fill = guide_legend( override.aes = list(size = 3, shape = 21)))  + 
-  # guides( shape = guide_legend( override.aes = list(size = 3)))  + 
+  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
+                                ncol=36,
+                                byrow=TRUE,))  + 
+  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
   lil.strip + 
   scale_x_month + 
   cowplot::theme_minimal_hgrid() 
@@ -325,22 +324,17 @@ szn_vir_lomb %>%
     axis.text.x = element_text(size = 10, vjust = 0.5, hjust = 1, margin = margin(l=10, r=10, t=0, b=0)),
     axis.title.y = element_text(size = 13),
     title = element_text(size = 12),
-    # legend.position = 'bottom') +
-  )+
-  guides( fill = guide_legend( override.aes = list(size = 3, shape = 21),
-                              nrow=100,
-                              )
-        )  + 
-  guides( shape = guide_legend( override.aes = list(size = 3)))  + 
-  guides( # plot legend at bottom in n_rows
-          colour=guide_legend(
-                              nrows=100,
-                              byrow=FALSE,
-                            ),
+    legend.position = 'bottom',
+  ) + guides( # plot legend at bottom in 2 rows
+            colour=guide_legend(
+                                ncol=36,
+                                byrow=TRUE,
+                              ),
+            shape = "none"
 )
   # ggtitle("Top 20 - Littoral")
 
-ggsave('./figs250109/polar_plot_years_wo_legend.pdf', width = 9, height = 9)
+ggsave('./figs250109/polar_plt_years_vir.png', width = 9, height = 9)
 
 
 
