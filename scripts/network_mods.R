@@ -196,16 +196,20 @@ tmp$tidy_dataset()
 # tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
 tmp$cal_network(network_method=NULL)
 tmp$tax_table <- tmp$tax_table
-cp_net$CyanoPhage_full <- meconet_cp
+cp_net$CyanoPhageFull <- meconet_cp
 
 # Network modularity for all networks -- partition modules for all the networks in the list
 cp_net %<>% cal_module(undirected_method="cluster_fast_greedy")
 
 # Network topoligical attributes for all networks -- exact all the res_network_attr tables in the networks and merge them into one final table 
-tmp <- cal_network_attr(cp_net)
+cp_res_net_attr <- cal_network_attr(cp_net)
 
 # Node and edge properties extraction for all networks
-cp_net %<>% get_node_table(node_roles = TRUE) %>% get_edge_table 
+cp_net %<>% get_node_table(node_roles = TRUE) %>% get_edge_table
+net_bloom_node_tab <- cp_net$Bloom$res_node_table
+net_bloom_edge_tab <- cp_net$Bloom$res_edge_table
+
+
 
 # compare nodes across networks
 # obtain the node distributions by searching the res_node_table in the object
@@ -262,19 +266,26 @@ tmp2 <- tmp1$trans_comm()
 names(tmp2$otu_table)
 
 # throws error:
-Intersec_all <- subset_network(cp_net, venn = tmp2, name = "Bloom&CyanoPhage_full")
+Intersec_all <- subset_network(cp_net, venn = tmp2, name="Bloom&CyanoPhageFull")
 # Intersec_all is a trans_network object
 # for example, save Intersec_all as gexf format
 # Intersec_all$save_network("Intersec_all.gexf")
 tmp1$data_details %>% head()
 
 
-# get overlapping edges
-edge_table_filter <- tmp$otu_table %>% filter(Bloom == 1, CyanoPhage_full == 1)
+# get overlapping edges (eg. Bloom and CyanoPhageFull)
+edge_table_filter <- tmp$otu_table %>% filter(Bloom == 1, CyanoPhageFull == 1)
 nodes_keep <- edge_table_filter %>% rownames() %>% 
   str_split(" -- ") %>% # split the string by " -- "
   # map_chr(1) %>% 
   unlist() %>% # flatten list
   unique()
 
-cp_subset <- meconet_cp$subset_network(node=nodes_keep)
+subset_cpFull_bloom <- meconet_cp$subset_network(node=nodes_keep)
+
+# https://github.com/ChiLiubio/microeco/issues/404#issuecomment-2327762965
+# igraph to trans_network object
+new_obj <- clone(meconet_cp)
+new_obj$res_network <- subset_cpFull_bloom
+# for example, save Intersec_all as gexf format
+new_obj$save_network("intersect_cpFull-Bloom.gexf")
