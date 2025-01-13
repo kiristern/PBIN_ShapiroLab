@@ -289,3 +289,38 @@ new_obj <- clone(meconet_cp)
 new_obj$res_network <- subset_cpFull_bloom
 # for example, save Intersec_all as gexf format
 new_obj$save_network("intersect_cpFull-Bloom.gexf")
+
+
+# follow rest of docs: https://chiliubio.github.io/microeco_tutorial/model-based-class.html#trans_network-class
+
+# calculate network attributes
+new_obj$cal_network_attr()
+new_obj$res_network_attr
+
+# get node properties
+new_obj$get_node_table(node_roles = TRUE)
+new_obj$res_node_table
+
+# get edge properties
+new_obj$get_edge_table()
+new_obj$res_edge_table
+
+# get adjacency matrix
+new_obj$get_adjacency_matrix()
+new_obj$res_adjacency_matrix
+
+# add_label = TRUE can be used to directly add text label for points
+new_obj$plot_taxa_roles(use_type = 1)
+# plot node roles with phylum information
+new_obj$plot_taxa_roles(use_type = 2)
+
+# The eigengene of a module, i.e. the first principal component of PCA, represents the main variance of the abundance in the species of the module.
+new_obj$cal_eigen()
+new_obj$res_eigen
+
+# create trans_env object
+t2 <- trans_env$new(dataset = meco_virps, add_data = sample_data(virps)[, 2:33])
+# calculate correlations
+t2$cal_cor(add_abund_table = new_obj$res_eigen)
+# plot the correlation heatmap
+t2$plot_cor()
