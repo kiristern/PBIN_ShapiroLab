@@ -261,6 +261,14 @@ tmp2 <- tmp1$trans_comm()
 # tmp2$otu_table %>% head()
 names(tmp2$otu_table)
 
+# throws error:
+Intersec_all <- subset_network(cp_net, venn = tmp2, name = "Bloom&CyanoPhage_full")
+# Intersec_all is a trans_network object
+# for example, save Intersec_all as gexf format
+# Intersec_all$save_network("Intersec_all.gexf")
+tmp1$data_details %>% head()
+
+
 # get overlapping edges
 edge_table_filter <- tmp$otu_table %>% filter(Bloom == 1, CyanoPhage_full == 1)
 nodes_keep <- edge_table_filter %>% rownames() %>% 
@@ -269,14 +277,4 @@ nodes_keep <- edge_table_filter %>% rownames() %>%
   unlist() %>% # flatten list
   unique()
 
-cp_net$subset_network(node=nodes_keep)
-
-
-subset_network(cp_net, node=nodes_keep)
-?subset_network
-
-Intersec_all <- subset_network(cp_net, venn = tmp2, name = "Bloom&CyanoPhage_full")
-# Intersec_all is a trans_network object
-# for example, save Intersec_all as gexf format
-# Intersec_all$save_network("Intersec_all.gexf")
-tmp1$data_details %>% head()
+cp_subset <- meconet_cp$subset_network(node=nodes_keep)
