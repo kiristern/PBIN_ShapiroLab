@@ -233,16 +233,50 @@ ggsave("figs250113/cyano-phage_edge-overlap.png", g1, width = 7, height = 6)
 tmp$cal_betadiv(method = "jaccard")
 tmp$beta_diversity$jaccard
 
+
+
 # extract the subset of edges according to the intersections of edges across networks
 # first obtain edges distribution and intersection
 tmp <- edge_comp(cp_net)
 tmp1 <- trans_venn$new(tmp)
+tmp1$data_summary
+tmp1$data_details %>% head()
+
 # convert intersection result to a microtable object
 tmp2 <- tmp1$trans_comm()
+
+# https://github.com/ChiLiubio/microeco/issues/321#issuecomment-1940357378
+# t1 <- clone(meconet_cp)
+# t1$get_edge_table()
+# t1$get_node_table(node_roles = TRUE)
+# t1$cal_network_attr()
+# t1$res_network_attr 
+# meco_module <- t1$trans_comm(use_col="module") 
+# View(meco_module$sample_table)
+# meco_module$otu_table %>% head()
+
+
 # extract the intersection of all the three networks ("Bloom", "noBloom")
 # please use colnames(tmp2$otu_table) to find the required name
-tmp2$otu_table %>% head()
+# tmp2$otu_table %>% head()
+names(tmp2$otu_table)
+
+# get overlapping edges
+edge_table_filter <- tmp$otu_table %>% filter(Bloom == 1, CyanoPhage_full == 1)
+nodes_keep <- edge_table_filter %>% rownames() %>% 
+  str_split(" -- ") %>% # split the string by " -- "
+  # map_chr(1) %>% 
+  unlist() %>% # flatten list
+  unique()
+
+cp_net$subset_network(node=nodes_keep)
+
+
+subset_network(cp_net, node=nodes_keep)
+?subset_network
+
 Intersec_all <- subset_network(cp_net, venn = tmp2, name = "Bloom&CyanoPhage_full")
 # Intersec_all is a trans_network object
 # for example, save Intersec_all as gexf format
-Intersec_all$save_network("Intersec_all.gexf")
+# Intersec_all$save_network("Intersec_all.gexf")
+tmp1$data_details %>% head()
