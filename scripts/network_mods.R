@@ -1,3 +1,4 @@
+.libPaths()
 
 library(tidyverse)
 library(phyloseq)
@@ -135,7 +136,7 @@ cyano_phage %>%
 
 
 
-
+library(meconetcomp)
 # https://chiliubio.github.io/microeco_tutorial/meconetcomp-package.html
 # create lists for correlation networks
 cp_net <- list()
@@ -159,22 +160,30 @@ tmp$sample_table %<>% subset(Bloom == "no")
 tmp$tidy_dataset()
 # tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
 # tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+tmp$cal_network(network_method=NULL)
+tmp$tax_table <- tmp$tax_table
 cp_net$noBloom <- meconet_nobloom
 
-# select samples of "mesotrophic" group
-tmp <- clone(meco_virps)
-meco_virps$sample_table %>% head()
 
 
 
 # Network modularity for all networks -- partition modules for all the networks in the list
 cp_net %<>% cal_module(undirected_method="cluster_fast_greedy")
 
-# Network topoligiocal attributes for all networks -- exact all the res_network_attr tables in the networks and merge them into one final table 
-cp_net %<>% cal_network_attr(cp_net)
+# Network topoligical attributes for all networks -- exact all the res_network_attr tables in the networks and merge them into one final table 
+tmp <- cal_network_attr(cp_net)
 
+# Node and edge properties extraction for all networks
+cp_net %<>% get_node_table(node_roles = TRUE) %>% get_edge_table 
 
-
-
-# load predefined modules
-cyano.phage <- trans_network$new(dataset=cyano_phage)
+# compare nodes across networks
+# obtain the node distributions by searching the res_node_table in the object
+tmp <- node_comp(cp_net, property = "name")
+# obtain nodes intersection
+tmp1 <- trans_venn$new(tmp, ratio = "numratio")
+g1 <- tmp1$plot_venn(fill_color = FALSE)
+g1
+ggsave("cyano_phage_net.pdf", g1, width = 7, height = 6)
+# calculate jaccard distance to reflect the overall differences of networks
+tmp$cal_betadiv(method = "jaccard")
+tmp$beta_diversity$jaccard
