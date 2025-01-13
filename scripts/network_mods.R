@@ -76,280 +76,61 @@ library(dplyr)
 library(tidyr)
 
 # https://yunranchen.github.io/intro-net-r/igraph.html#built-networks-from-external-sources-basic-visualization-and-more-on-network-descriptions
-cp <- cyano_phage %>% select(PhageTaxa, CyanoTaxa, ModuleLabel) %>% 
-  group_by(PhageTaxa, CyanoTaxa) #%>%
-  # expand(edge=c(1:ModuleLabel)) %>%
-  # select(-edge)
-g_cp <- graph_from_data_frame(cp, directed = FALSE)
-g_cp
-plot(g_cp,edge.arrow.size=.5, vertex.color="gold", vertex.size=3, 
-     vertex.frame.color="gray", vertex.label.color="black", 
-     vertex.label.cex=.5, vertex.label.dist=2, edge.curved=0.5,
-    #  layout=layout_with_lgl
-)
+igraph_to_meco <- function(df_module, meco_ps){
+  net <- df_module %>% select(PhageTaxa, CyanoTaxa, ModuleLabel) %>% 
+  group_by(PhageTaxa, CyanoTaxa) 
+  # create a graph object
+  g <- graph_from_data_frame(net, directed = FALSE)
+  # add +ve or -ve edges -- needed for cal_sum_links
+  E(g)$label <- ifelse(E(g)$ModuleLabel > 0, '+', '-') 
+  # assign group membership to node attribute
+  V(g)$group <- components(g)$membership
 
-# add +ve or -ve edges -- needed for cal_sum_links
-# https://github.com/ChiLiubio/microeco/issues/281#issuecomment-1766136594
-E(g_cp)$label <- ifelse(E(g_cp)$ModuleLabel > 0, '+', '-') 
+  new_network <- clone(meco_ps)
 
+  test1 <- trans_network$new(dataset=new_network, 
+    graph=g,
+    cor_method=NULL,
+    taxa_level="OTU",
+    )
+  test1$cal_network(network_method=NULL)
+  test1$tax_table <- new_network$tax_table
+  # add graph to network
+  test1$res_network <- g
+  # test1$save_network("cyano_phage")
+  # test1$plot_network()
 
-# check with GT
-cyano_phage %>% select(PhageTaxa, CyanoTaxa, ModuleLabel) %>% 
-  filter(ModuleLabel==1) 
-# chech membership igraph  
-components(g_cp)
+  # add predefined modules
+  test1$res_node_table <- data.frame(name = names(V(g)), module = V(g)$group)
 
-# assign group membership to node attribute
-# https://stackoverflow.com/questions/61219754/adding-group-membership-as-a-node-attribute-after-simulating-a-network-in-igraph
-V(g_cp)$group <- components(g_cp)$membership
+  test1$cal_network_attr()
+  test1$res_network_attr
 
-plot(g_cp, vertex.color=V(g_cp)$group, vertex.size=3, 
-     vertex.frame.color="gray", vertex.label.color="black", 
-     vertex.label.cex=.5, vertex.label.dist=2, edge.curved=0.5,
-    # layout=layout_with_lgl
-)
-
-
-# https://yunranchen.github.io/intro-net-r/igraph.html#paths-communitites-and-related-visualization
-# ground truth modules
-GT_mods <- make_clusters(g_cp, V(g_cp)$group)
-
-#non-negative values: different labels; negative values: no labels
-# initial=rep(-1,vcount(g_cp))
-initial<- V(g_cp)$group
-fixed=rep(TRUE,vcount(g_cp))
-#need to have names
-names(initial)=names(fixed)=V(g_cp)$name 
-# initial['Mr Hi']=1
-# initial['John A']=2
-# fixed['Mr Hi']=fixed['John A']=TRUE
-lab=cluster_label_prop(g_cp,initial = initial,fixed = fixed)
-set.seed(1)
-plot(lab, g_cp, vertex.color=V(g_cp)$group, vertex.size=3, 
-     vertex.frame.color="gray", vertex.label.color="black", 
-     vertex.label.cex=.5, vertex.label.dist=2, edge.curved=0.5,
-    # layout=layout_with_lgl
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# https://r.igraph.org/reference/as_membership.html
-modules <- V(g_cp)$group %>% igraph::as_membership()
-
-modularity(g_cp, membership=modules)
-
-fc <- cluster_fast_greedy(g_cp, weights=NULL, merges=TRUE, modularity=TRUE, membership=modules)
-
-compare(fc, modules)
-compare(modules, membership(fc))
-
-# add modules to the network
-modularity_matrix(g_cp, 
-  membership=modules,
-  weights=NULL,
-  resolution=1,
-  directed=FALSE,
-)
-membership(g_cp)
-g_cp
-
-# https://github.com/ChiLiubio/microeco/issues/404#issuecomment-2327762965
-# convert igraph to trans_network object
-new_network <- clone(meco_virps)
-
-test1 <- trans_network$new(dataset=new_network, 
-  graph=g_cp,
-  cor_method=NULL,
-  taxa_level="OTU",
-  )
-test1$cal_network(network_method=NULL)
-test1$tax_table <- new_network$tax_table
-# add graph to network
-test1$res_network <- g_cp
-# test1$save_network("cyano_phage")
-test1$plot_network()
-
-# add predefined modules
-test1$res_node_table <- data.frame(name = cyano_phage$PhageTaxa, module = cyano_phage$ModuleLabel)
-
-test1$run_network_analysis()
-
-# then calculate network
-# test1$cal_network(COR_p_thres = 0.05, COR_cut = 0.7)
-# partition the network into modules ivoking the igraph function
-test1$cal_module(method="cluster_fast_greedy") 
-test1$cal_network_attr()
-test1$get_node_table()
-head(test1$res_node_table)
-test1$plot_taxa_roles()
-
-
-test1$get_node_table(node_roles = TRUE)
-node_res <- test1$res_node_table
-
-test1$get_edge_table()
-edge_res <- test1$res_edge_table
-
-test1$get_adjacency_matrix()
-adja_res <- test1$res_adjacency_matrix
-
-node_res %>% select(name, module) %>%
-  filter(name=="vir_ASV_288")
-cyano_phage
-
-
-
-
-
-# https://github.com/ChiLiubio/microeco/issues/373#issuecomment-2167158701
-# convert long format to symmetrical matrix
-# The first and second columns must be names
-vec2mat <- function(data, value_var, value_NA = 0, value_diag = 0){
-	library(magrittr)
-  datatable <- data %>% as.data.frame
-	datatable[, value_var] %<>% as.numeric 
-	use_table <- datatable[, c(2:3)] # using PhageTaxa and CyanoTaxa pairs
-	use_table[, value_var] <- datatable[, value_var]
-	colnames(use_table) <- c("t1", "t2", "value")
-	res_table <- rbind.data.frame(
-		use_table, 
-		data.frame(t1 = use_table[, 2], t2 = use_table[, 1], value = use_table[, 3])
-	)
-	res_table <- reshape2::dcast(res_table, t1~t2, value.var = "value") %>% 
-		`row.names<-`(.[,1]) %>% 
-		.[, -1] %>% 
-		as.matrix
-	res_table[is.na(res_table)] <- value_NA
-	diag(res_table) <- value_diag
-	return(res_table)
+  test1$cal_module(method="cluster_fast_greedy") 
+  test1$cal_network_attr()
+  test1$res_network_attr
+  test1$get_node_table(node_roles = TRUE)
+  head(test1$res_node_table)
+  # test1$plot_taxa_roles()
+  test1$get_edge_table()
+  # edge_res <- test1$res_edge_table
+  test1$get_adjacency_matrix()
+  return(test1)
 }
 
-cor_matrix <- vec2mat(cyano_phage, value_var = "ModuleLabel", value_NA = 0., value_diag = 0.)
-max(cor_matrix) # largest module number
+meconet_bloom <- igraph_to_meco(cyano_phage.bloom, meco_virps)
+meconet_nobloom <- igraph_to_meco(cyano_phage.nobloom, meco_virps)
+meconet_cp <- igraph_to_meco(cyano_phage, meco_virps)
 
-p_matrix <- vec2mat(cyano_phage, value_var = "pval", value_NA = 1, value_diag = 1)
+meconet_nobloom$plot_network()
 
-# dataset NULL for customized correlation
-test1 <- trans_network$new(dataset = NULL)
-
-# use list to add these two matrix objects to test1
-test1$res_cor_p <- list(cor = cor_matrix, p = p_matrix)
-# then calculate network
-test1$cal_network(COR_p_thres = 0.05, COR_cut = 0.7, COR_p_adjust="none")
-test1$cal_module()
-test1$cal_network_attr()
-test1$get_node_table()
-head(test1$res_node_table)
-test1$plot_taxa_roles()
-
-# meco object
-cp_net <- trans_network$new(dataset = NULL)
-cp_net$res_cor_p <- list(cor = cor_matrix)
-
-
-
-
-
-
-
-# https://github.com/ChiLiubio/microeco/issues/274#issue-1891932090
-# Convert adjacency matrices into long-format data 
-convertCorrelationMatrix <- function(cor_matrix) {
-  cor_matrix[lower.tri(cor_matrix)] <- 0
-  df <- melt(cor_matrix, varnames = c("PhageTaxa", "CyanoTaxa"), value.name = "weight")
-  df <- subset(df, weight != 0 & PhageTaxa != CyanoTaxa)
-  return(df)
-}
-
-# Calculate the degree of the connected node and distinguish which module the degree of the node belongs to
-calculate_degree_to_each_module <- function(node_table, adja_mtx) {
-  connectivity_edge <- convertCorrelationMatrix(adja_mtx)
-  df_merged <- merge(connectivity_edge, node_table, by.x = "PhageTaxa", by.y = "name", all.x = TRUE)
-  df_merged <- df_merged[, c("PhageTaxa", "CyanoTaxa", "ModuleLabel")]
-  colnames(df_merged)[3] <- "PhageTaxa_ModuleLabel"
-  df_merged <- merge(df_merged, node_table, by.x = "CyanoTaxa", by.y = "name", all.x = TRUE)
-  df_merged <- df_merged[, c("PhageTaxa", "CyanoTaxa", "PhageTaxa_ModuleLabel", "ModuleLabel")]
-  colnames(df_merged)[4] <- "CyanoTaxa_ModuleLabel"
-  edge_module <- df_merged[c("PhageTaxa", "CyanoTaxa", "PhageTaxa_ModuleLabel", "CyanoTaxa_ModuleLabel")]
-  node_to_module <- rbind(edge_module %>% select(node = PhageTaxa, to_mod = CyanoTaxa_module), edge_module %>% select(node = CyanoTaxa, to_mod = PhageTaxa_module))
-  count_node_to_module <- node_to_module %>%
-    group_by(node, to_mod) %>%
-    summarize(count = n())
-  degree_df <- matrix(0, nrow = length(unique(count_node_to_module$node)),
-                      ncol = length(unique(count_node_to_module$to_mod)),
-                      dimnames = list(unique(count_node_to_module$node), sort(unique(count_node_to_module$to_mod)))) %>% as.data.frame()
-  for (i in 1:nrow(count_node_to_module)) {
-    row_name <- as.character(count_node_to_module$node[i])
-    col_name <- as.character(count_node_to_module$to_mod[i])
-    value <- count_node_to_module$count[i]
-    degree_df[row_name, col_name] <- value
-  }
-  degree_df$name <- rownames(degree_df)
-  degree_df
-}
-
-# Calculate the z-score and participation coeffiecient of the node
-calculate_z_p <- function(node_table, adja_mtx) {
-  degree_df <- calculate_degree_to_each_module(node_table, adja_mtx)
-  tmp_df <- merge(node_table, degree_df, by = 'name', all.x = T)
-  tmp_df[is.na(tmp_df)] <- 0
-  tmp_df$within_degree <- 0
-  tmp_df$total_degree <- 0
-  tmp_df$p_coeff <- 0
-  
-  if (0 %in% unique(tmp_df$module)) {
-    module_num <- length(unique(tmp_df$module)) - 1
-  } else {
-    module_num <- length(unique(tmp_df$module))
-  }
-  
-  for (i in 1:nrow(tmp_df)) {
-    this_module <- tmp_df$module[i] %>% as.character()
-    if (this_module != '0') {
-      value <- tmp_df[[this_module]][i]
-    } else {
-      value <- 0
-    }
-    tmp_df$within_degree[i] <- value
-    # p
-    mod.degree <- tmp_df[i, paste0('M',1:module_num)]
-    tmp_df$total_degree[i] <- mod.degree %>% sum()
-    tmp_df$p_coeff[i] <- 1 - (sum((mod.degree)**2) / tmp_df$total_degree[i]**2)
-  }
-  
-  # z
-  tmp_df %<>%
-    group_by(module) %>%
-    mutate(z_score = (within_degree - mean(within_degree)) / sd(within_degree)) %>%
-    ungroup()
-  # In some cases, z is NaN, which is set to 0 (for example, module with only one node or standard deviation 0).
-  # p is NaN when ki = 0
-  tmp_df$z_score[is.na(tmp_df$z_score)] <- 0
-  tmp_df$p_coeff[is.na(tmp_df$p_coeff)] <- 0
-  tmp_df %>% select(-paste0('M',1:module_num))
-}
-
-# use node_res and adja_res  can recalculate p and z
-new_node_res <- calculate_z_p(node_res, adja_res)
-
-
-
-
+# verify same with GT
+meconet_cp$res_edge_table %>% 
+  select(node1, node2, ModuleLabel) %>%
+  filter(ModuleLabel==4)
+cyano_phage %>% 
+  filter(ModuleLabel==4) %>% 
+  select(PhageTaxa, CyanoTaxa, ModuleLabel)
 
 
 
@@ -367,20 +148,18 @@ tmp$sample_table %<>% subset(Bloom=="yes")
 # trim all files in the object
 tmp$tidy_dataset()
 # use filter_thres parameter to filter the feature with low relative abundance
-tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
-# COR_p_thres represents the p value threshold
-# COR_cut denotes the correlation coefficient threshold
-tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+tmp$cal_network(network_method=NULL)
+tmp$tax_table <- tmp$tax_table
 # put the network into the list
-cp_net$Bloom <- tmp
+cp_net$Bloom <- meconet_bloom
 
 # select samples of "no bloom" group
 tmp <- clone(meco_virps)
 tmp$sample_table %<>% subset(Bloom == "no")
 tmp$tidy_dataset()
-tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
-tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
-cp_net$noBloom <- tmp
+# tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
+# tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+cp_net$noBloom <- meconet_nobloom
 
 # select samples of "mesotrophic" group
 tmp <- clone(meco_virps)
