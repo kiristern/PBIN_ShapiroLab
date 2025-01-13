@@ -109,9 +109,9 @@ igraph_to_meco <- function(df_module, meco_ps){
 
   test1$cal_module(method="cluster_fast_greedy") 
   test1$cal_network_attr()
-  test1$res_network_attr
+  # test1$res_network_attr
   test1$get_node_table(node_roles = TRUE)
-  head(test1$res_node_table)
+  # head(test1$res_node_table)
   # test1$plot_taxa_roles()
   test1$get_edge_table()
   # edge_res <- test1$res_edge_table
@@ -125,7 +125,31 @@ meconet_cp <- igraph_to_meco(cyano_phage, meco_virps)
 meconet_meso <- igraph_to_meco(cyano_phage.mesotrophic, meco_virps)
 meconet_eutro <- igraph_to_meco(cyano_phage.eutrophic, meco_virps)
 
-meconet_nobloom$plot_network()
+# nice plot
+meconet_nobloom$plot_network(edge.arrow.size=.5, 
+  vertex.color="gold", 
+  vertex.size=3, 
+  vertex.frame.color="gray", 
+  vertex.label.color="black", 
+  vertex.label.cex=.5, 
+  vertex.label.dist=2, 
+  edge.curved=0.5,
+  layout=layout_with_lgl
+)
+
+# colour by module
+meconet_nobloom$plot_network(
+  edge.arrow.size=.5, 
+  vertex.color=meconet_nobloom$res_node_table$module, 
+  vertex.size=3, 
+  vertex.frame.color="gray", 
+  vertex.label.color="black", 
+  vertex.label.cex=.5, 
+  vertex.label.dist=2, 
+  edge.curved=0.5,
+  # layout=layout_with_lgl
+)
+
 
 # verify same with GT
 meconet_cp$res_edge_table %>% 
@@ -134,6 +158,16 @@ meconet_cp$res_edge_table %>%
 cyano_phage %>% 
   filter(ModuleLabel==4) %>% 
   select(PhageTaxa, CyanoTaxa, ModuleLabel)
+
+# verify same with GT
+meconet_bloom$res_edge_table %>% 
+  select(node1, node2, ModuleLabel) %>%
+  filter(ModuleLabel==4)
+cyano_phage.bloom %>% 
+  filter(ModuleLabel==4) %>% 
+  select(PhageTaxa, CyanoTaxa, ModuleLabel)
+
+
 
 # sample_data(virps) %>% head()
 # sample_data(virps)$N_range %>% unique() # suppose this col ?
@@ -203,6 +237,7 @@ cp_net %<>% cal_module(undirected_method="cluster_fast_greedy")
 
 # Network topoligical attributes for all networks -- exact all the res_network_attr tables in the networks and merge them into one final table 
 cp_res_net_attr <- cal_network_attr(cp_net)
+cp_res_net_attr
 
 # Node and edge properties extraction for all networks
 cp_net %<>% get_node_table(node_roles = TRUE) %>% get_edge_table
