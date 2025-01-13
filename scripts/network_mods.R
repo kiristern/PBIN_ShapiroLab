@@ -33,7 +33,7 @@ cyano_phage.nobloom <- to_long_df(cyano_phage.nobloom)
 cyano_phage.mesotrophic <- to_long_df(cyano_phage.mesotrophic)
 cyano_phage.eutrophic <- to_long_df(cyano_phage.eutrophic)
 
-cyano_phage %>% head()
+# cyano_phage %>% head()
 
 
 ############################
@@ -122,6 +122,8 @@ igraph_to_meco <- function(df_module, meco_ps){
 meconet_bloom <- igraph_to_meco(cyano_phage.bloom, meco_virps)
 meconet_nobloom <- igraph_to_meco(cyano_phage.nobloom, meco_virps)
 meconet_cp <- igraph_to_meco(cyano_phage, meco_virps)
+meconet_meso <- igraph_to_meco(cyano_phage.mesotrophic, meco_virps)
+meconet_eutro <- igraph_to_meco(cyano_phage.eutrophic, meco_virps)
 
 meconet_nobloom$plot_network()
 
@@ -133,7 +135,9 @@ cyano_phage %>%
   filter(ModuleLabel==4) %>% 
   select(PhageTaxa, CyanoTaxa, ModuleLabel)
 
-
+# sample_data(virps) %>% head()
+sample_data(virps)$N_range %>% unique() # suppose this col ?
+sample_data(virps)$P_range %>% unique()
 
 
 library(meconetcomp)
@@ -164,8 +168,35 @@ tmp$cal_network(network_method=NULL)
 tmp$tax_table <- tmp$tax_table
 cp_net$noBloom <- meconet_nobloom
 
+# select samples of "Meso" group
+tmp <- clone(meco_virps)
+tmp$sample_table %<>% subset(N_range == "Mesotrophic")
+tmp$tidy_dataset()
+# tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
+# tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+tmp$cal_network(network_method=NULL)
+tmp$tax_table <- tmp$tax_table
+cp_net$Mesotrophic <- meconet_meso
 
+# select samples of "Eutroph" group
+tmp <- clone(meco_virps)
+tmp$sample_table %<>% subset(N_range == "Eutrophic")
+tmp$tidy_dataset()
+# tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
+# tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+tmp$cal_network(network_method=NULL)
+tmp$tax_table <- tmp$tax_table
+cp_net$Eutrophic <- meconet_eutro
 
+# select samples of "full" group
+tmp <- clone(meco_virps)
+# tmp$sample_table %<>% subset(N_range == "Eutrophic")
+tmp$tidy_dataset()
+# tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
+# tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
+tmp$cal_network(network_method=NULL)
+tmp$tax_table <- tmp$tax_table
+cp_net$CyanoPhage_full <- meconet_cp
 
 # Network modularity for all networks -- partition modules for all the networks in the list
 cp_net %<>% cal_module(undirected_method="cluster_fast_greedy")
@@ -182,8 +213,36 @@ tmp <- node_comp(cp_net, property = "name")
 # obtain nodes intersection
 tmp1 <- trans_venn$new(tmp, ratio = "numratio")
 g1 <- tmp1$plot_venn(fill_color = FALSE)
+g1 <- g1 + ggtitle("Node overlap networks")
 g1
-ggsave("cyano_phage_net.pdf", g1, width = 7, height = 6)
+ggsave("figs250113/CyanoPhage_B-noB_venn-net.png", g1, width = 7, height = 6)
 # calculate jaccard distance to reflect the overall differences of networks
 tmp$cal_betadiv(method = "jaccard")
 tmp$beta_diversity$jaccard
+
+# compare edges across networks -- studying edges overlap
+# get the edge distributions across networks
+tmp <- edge_comp(cp_net)
+# obtain edges intersection
+tmp1 <- trans_venn$new(tmp, ratio = "numratio")
+g1 <- tmp1$plot_venn(fill_color = FALSE)
+g1 <- g1 + ggtitle("Edge overlap networks")
+g1
+ggsave("figs250113/cyano-phage_edge-overlap.png", g1, width = 7, height = 6)
+# calculate jaccard distance
+tmp$cal_betadiv(method = "jaccard")
+tmp$beta_diversity$jaccard
+
+# extract the subset of edges according to the intersections of edges across networks
+# first obtain edges distribution and intersection
+tmp <- edge_comp(cp_net)
+tmp1 <- trans_venn$new(tmp)
+# convert intersection result to a microtable object
+tmp2 <- tmp1$trans_comm()
+# extract the intersection of all the three networks ("Bloom", "noBloom")
+# please use colnames(tmp2$otu_table) to find the required name
+tmp2$otu_table %>% head()
+Intersec_all <- subset_network(cp_net, venn = tmp2, name = "Bloom&CyanoPhage_full")
+# Intersec_all is a trans_network object
+# for example, save Intersec_all as gexf format
+Intersec_all$save_network("Intersec_all.gexf")
