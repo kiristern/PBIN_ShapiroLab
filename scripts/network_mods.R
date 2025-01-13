@@ -136,8 +136,8 @@ cyano_phage %>%
   select(PhageTaxa, CyanoTaxa, ModuleLabel)
 
 # sample_data(virps) %>% head()
-sample_data(virps)$N_range %>% unique() # suppose this col ?
-sample_data(virps)$P_range %>% unique()
+# sample_data(virps)$N_range %>% unique() # suppose this col ?
+sample_data(virps)$P_range %>% unique() # Alexis specified it is this col
 
 
 library(meconetcomp)
@@ -170,7 +170,7 @@ cp_net$noBloom <- meconet_nobloom
 
 # select samples of "Meso" group
 tmp <- clone(meco_virps)
-tmp$sample_table %<>% subset(N_range == "Mesotrophic")
+tmp$sample_table %<>% subset(P_range == "Mesotrophic")
 tmp$tidy_dataset()
 # tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
 # tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
@@ -180,7 +180,7 @@ cp_net$Mesotrophic <- meconet_meso
 
 # select samples of "Eutroph" group
 tmp <- clone(meco_virps)
-tmp$sample_table %<>% subset(N_range == "Eutrophic")
+tmp$sample_table %<>% subset(P_range == "Eutrophic")
 tmp$tidy_dataset()
 # tmp <- trans_network$new(dataset = tmp, cor_method = "spearman", filter_thres = 0.0005)
 # tmp$cal_network(COR_p_thres = 0.01, COR_cut = 0.6)
@@ -219,7 +219,7 @@ tmp1 <- trans_venn$new(tmp, ratio = "numratio")
 g1 <- tmp1$plot_venn(fill_color = FALSE)
 g1 <- g1 + ggtitle("Node overlap networks")
 g1
-ggsave("figs250113/CyanoPhage_B-noB_venn-net.png", g1, width = 7, height = 6)
+ggsave("figs250113/all-node_venn.png", g1, width = 7, height = 6)
 # calculate jaccard distance to reflect the overall differences of networks
 tmp$cal_betadiv(method = "jaccard")
 tmp$beta_diversity$jaccard
@@ -232,7 +232,7 @@ tmp1 <- trans_venn$new(tmp, ratio = "numratio")
 g1 <- tmp1$plot_venn(fill_color = FALSE)
 g1 <- g1 + ggtitle("Edge overlap networks")
 g1
-ggsave("figs250113/cyano-phage_edge-overlap.png", g1, width = 7, height = 6)
+ggsave("figs250113/all_edge-overlap.png", g1, width = 7, height = 6)
 # calculate jaccard distance
 tmp$cal_betadiv(method = "jaccard")
 tmp$beta_diversity$jaccard
